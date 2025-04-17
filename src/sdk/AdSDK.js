@@ -11,6 +11,7 @@ class AdSDK {
         this.cacheManager = new CacheManager(config);
         this.retryManager = new RetryManager(config);
         this.initialized = false;
+        this.winningAN = null;
     }
 
     async initialize() {
@@ -26,9 +27,6 @@ class AdSDK {
             axios.defaults.headers.common['Content-Type'] = 'application/json';
             axios.defaults.timeout = this.config.timeout || 5000;
 
-            // 启动缓存清理
-            this.cacheManager.startCleanup();
-
             this.initialized = true;
             logger.info('SDK初始化成功');
         } catch (error) {
@@ -37,20 +35,11 @@ class AdSDK {
         }
     }
 
-    async getAd(adUnitId, options = {}) {
+    // 发起广告填充请求
+    async requestAdFill(adUnitId, options = {}) {
         this.checkInitialization();
 
         try {
-            // 生成缓存键
-            const cacheKey = this.generateCacheKey('ad', adUnitId, options);
-            
-            // 尝试从缓存获取
-            const cachedAd = await this.cacheManager.get(cacheKey);
-            if (cachedAd) {
-                logger.info(`广告缓存命中: ${adUnitId}`);
-                return cachedAd;
-            }
-
             // 生成请求签名
             const timestamp = Date.now();
             const signature = this.securityService.generateRequestSignature({
@@ -59,10 +48,12 @@ class AdSDK {
                 timestamp
             });
 
-            // 发送请求（带重试）
+            // 发送广告填充请求
             const response = await this.retryManager.execute(async () => {
-                return await axios.get(`/ad/${adUnitId}`, {
-                    params: options,
+                return await axios.post(`/ad/fill`, {
+                    adUnitId,
+                    ...options
+                }, {
                     headers: {
                         'X-Timestamp': timestamp,
                         'X-Signature': signature
@@ -73,72 +64,81 @@ class AdSDK {
             // 验证响应
             this.securityService.validateResponse(response);
 
-            // 解密广告数据
-            const decryptedAd = this.securityService.decryptData(response.data);
-            
-            // 缓存广告
-            await this.cacheManager.set(cacheKey, decryptedAd);
-            
-            return decryptedAd;
+            // 解析胜出 AN 信息
+            const { winningAN, bidToken } = response.data;
+            this.winningAN = winningAN;
+
+            // 记录竞价结果
+            logger.info(`广告填充请求成功，胜出AN: ${winningAN}`);
+
+            return {
+                winningAN,
+                bidToken
+            };
         } catch (error) {
-            logger.error(`获取广告失败: ${error.message}`);
+            logger.error(`广告填充请求失败: ${error.message}`);
             throw error;
         }
     }
 
-    async bid(adUnitId, options = {}) {
+    // 加载胜出 AN 的广告
+    async loadWinningAd(adUnitId, bidToken) {
+        this.checkInitialization();
+
+        if (!this.winningAN) {
+            throw new Error('未找到胜出AN');
+        }
+
+        try {
+            // 根据胜出 AN 选择对应的适配器
+            const adapter = this.getAdapter(this.winningAN);
+            if (!adapter) {
+                throw new Error(`未找到AN适配器: ${this.winningAN}`);
+            }
+
+            // 调用胜出 AN 的广告加载接口
+            const ad = await adapter.loadAd(adUnitId, bidToken);
+            
+            logger.info(`成功加载胜出AN广告: ${this.winningAN}`);
+            return ad;
+        } catch (error) {
+            logger.error(`加载胜出AN广告失败: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // 展示广告
+    async showAd(containerId, ad) {
         this.checkInitialization();
 
         try {
-            // 生成缓存键
-            const cacheKey = this.generateCacheKey('bid', adUnitId, options);
-            
-            // 尝试从缓存获取
-            const cachedBid = await this.cacheManager.get(cacheKey);
-            if (cachedBid) {
-                logger.info(`竞价缓存命中: ${adUnitId}`);
-                return cachedBid;
+            const container = document.getElementById(containerId);
+            if (!container) {
+                throw new Error(`未找到广告容器: ${containerId}`);
             }
 
-            // 生成请求签名
-            const timestamp = Date.now();
-            const signature = this.securityService.generateRequestSignature({
-                adUnitId,
-                options,
-                timestamp
-            });
+            // 调用胜出 AN 的广告展示接口
+            const adapter = this.getAdapter(this.winningAN);
+            await adapter.showAd(container, ad);
 
-            // 发送请求（带重试）
-            const response = await this.retryManager.execute(async () => {
-                return await axios.post(`/bid/${adUnitId}`, options, {
-                    headers: {
-                        'X-Timestamp': timestamp,
-                        'X-Signature': signature
-                    }
-                });
-            });
-
-            // 验证响应
-            this.securityService.validateResponse(response);
-
-            // 解密竞价结果
-            const decryptedBid = this.securityService.decryptData(response.data);
+            // 记录广告展示
+            await this.trackImpression(ad.id, this.winningAN);
             
-            // 缓存竞价结果
-            await this.cacheManager.set(cacheKey, decryptedBid, 60); // 缓存1分钟
-            
-            return decryptedBid;
+            logger.info(`广告展示成功: ${containerId}`);
         } catch (error) {
-            logger.error(`竞价失败: ${error.message}`);
+            logger.error(`广告展示失败: ${error.message}`);
             throw error;
         }
     }
 
+    // 获取 AN 适配器
+    getAdapter(anName) {
+        return this.adapters.get(anName);
+    }
+
+    // 记录广告展示
     async trackImpression(adId, platform) {
-        this.checkInitialization();
-
         try {
-            // 生成请求签名
             const timestamp = Date.now();
             const signature = this.securityService.generateRequestSignature({
                 adId,
@@ -146,26 +146,20 @@ class AdSDK {
                 timestamp
             });
 
-            // 发送请求（带重试）
-            await this.retryManager.execute(async () => {
-                return await axios.post(`/track/impression/${adId}`, { platform }, {
-                    headers: {
-                        'X-Timestamp': timestamp,
-                        'X-Signature': signature
-                    }
-                });
+            await axios.post(`/track/impression/${adId}`, { platform }, {
+                headers: {
+                    'X-Timestamp': timestamp,
+                    'X-Signature': signature
+                }
             });
         } catch (error) {
             logger.error(`记录广告展示失败: ${error.message}`);
-            throw error;
         }
     }
 
+    // 记录广告点击
     async trackClick(adId, platform, revenue) {
-        this.checkInitialization();
-
         try {
-            // 生成请求签名
             const timestamp = Date.now();
             const signature = this.securityService.generateRequestSignature({
                 adId,
@@ -174,24 +168,15 @@ class AdSDK {
                 timestamp
             });
 
-            // 发送请求（带重试）
-            await this.retryManager.execute(async () => {
-                return await axios.post(`/track/click/${adId}`, { platform, revenue }, {
-                    headers: {
-                        'X-Timestamp': timestamp,
-                        'X-Signature': signature
-                    }
-                });
+            await axios.post(`/track/click/${adId}`, { platform, revenue }, {
+                headers: {
+                    'X-Timestamp': timestamp,
+                    'X-Signature': signature
+                }
             });
         } catch (error) {
             logger.error(`记录广告点击失败: ${error.message}`);
-            throw error;
         }
-    }
-
-    // 生成缓存键
-    generateCacheKey(type, adUnitId, options) {
-        return `${type}:${adUnitId}:${JSON.stringify(options)}`;
     }
 
     validateConfig() {
