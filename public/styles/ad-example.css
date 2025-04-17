@@ -1,0 +1,41 @@
+.ad-example-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.ad-container {
+    margin: 20px 0;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+}
+
+.ad-container h2 {
+    color: #333;
+    font-size: 1.5em;
+    margin-bottom: 15px;
+}
+
+.ad-placeholder {
+    min-height: 100px;
+    background-color: #f0f0f0;
+    border: 1px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .ad-example-page {
+        padding: 10px;
+    }
+    
+    .ad-container {
+        padding: 15px;
+        margin: 15px 0;
+    }
+} 

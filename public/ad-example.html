@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广告示例页面</title>
+    <link rel="stylesheet" href="styles/ad-example.css">
+</head>
+<body>
+    <div class="ad-example-page">
+        <h1>广告示例页面</h1>
+        
+        <div class="ad-container">
+            <h2>横幅广告</h2>
+            <div id="banner-ad" class="ad-placeholder"></div>
+        </div>
+        
+        <div class="ad-container">
+            <h2>插页广告</h2>
+            <div id="interstitial-ad" class="ad-placeholder"></div>
+        </div>
+        
+        <div class="ad-container">
+            <h2>原生广告</h2>
+            <div id="native-ad" class="ad-placeholder"></div>
+        </div>
+        
+        <div class="ad-container">
+            <h2>所有广告</h2>
+            <div id="all-ads" class="ad-placeholder"></div>
+        </div>
+    </div>
+
+    <script src="js/ad-aggregator.js"></script>
+    <script>
+        // 初始化广告聚合器
+        const adAggregator = new AdAggregator({
+            appId: 'your-app-id',
+            appKey: 'your-app-key'
+        });
+
+        // 启动缓存清理
+        adAggregator.startCacheCleanup();
+
+        // 预加载广告
+        window.addEventListener('load', () => {
+            adAggregator.preloadAds(['banner', 'interstitial', 'native']);
+        });
+
+        // 加载横幅广告
+        adAggregator.loadAd('banner-ad', {
+            adType: 'banner',
+            width: 320,
+            height: 50
+        });
+
+        // 加载插页广告
+        adAggregator.loadAd('interstitial-ad', {
+            adType: 'interstitial'
+        });
+
+        // 加载原生广告
+        adAggregator.loadAd('native-ad', {
+            adType: 'native'
+        });
+
+        // 加载所有广告
+        adAggregator.loadAd('all-ads', {
+            adType: 'all'
+        });
+    </script>
+</body>
+</html> 

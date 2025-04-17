@@ -1,0 +1,2 @@
+rootProject.name = "AdVerge SDK"
+include ':app' 

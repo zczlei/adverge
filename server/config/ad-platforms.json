@@ -1,0 +1,112 @@
+{
+  "topon": {
+    "enabled": true,
+    "apiUrl": "https://api.topon.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "bigo": {
+    "enabled": true,
+    "apiUrl": "https://api.bigoads.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "inmobi": {
+    "enabled": true,
+    "apiUrl": "https://api.inmobi.com/v1",
+    "accountId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "mintegral": {
+    "enabled": true,
+    "apiUrl": "https://api.mintegral.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "vungle": {
+    "enabled": true,
+    "apiUrl": "https://api.vungle.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "fyber": {
+    "enabled": true,
+    "apiUrl": "https://api.fyber.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "chartboost": {
+    "enabled": true,
+    "apiUrl": "https://api.chartboost.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "ironsource": {
+    "enabled": true,
+    "apiUrl": "https://api.ironsrc.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "unity": {
+    "enabled": true,
+    "apiUrl": "https://api.unity3d.com/v1",
+    "gameId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  },
+  "mahimeta": {
+    "enabled": true,
+    "apiUrl": "https://api.mahimeta.com/v1",
+    "appId": "",
+    "appKey": "",
+    "placementIds": {
+      "banner": "",
+      "interstitial": "",
+      "rewarded": ""
+    }
+  }
+} 

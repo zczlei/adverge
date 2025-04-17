@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.adverge.sdk">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    
+    <!-- IronSource SDK所需权限 -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="28" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="32" />
+
+    <application>
+        <!-- 不需要任何Activity声明，因为这是一个库项目 -->
+        
+        <!-- IronSource SDK配置 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy"/>
+            
+        <!-- 其他广告平台配置 -->
+        <meta-data
+            android:name="com.mintegral.msdk.APP_ID"
+            android:value="your_mintegral_app_id"/>
+        <meta-data
+            android:name="com.mintegral.msdk.APP_KEY"
+            android:value="your_mintegral_app_key"/>
+            
+        <meta-data
+            android:name="com.pangle.app_id"
+            android:value="your_pangle_app_id"/>
+            
+        <meta-data
+            android:name="com.applovin.sdk.key"
+            android:value="your_applovin_sdk_key"/>
+            
+        <meta-data
+            android:name="com.unity3d.ads.unityads.appid"
+            android:value="your_unity_app_id"/>
+            
+        <meta-data
+            android:name="com.ironsource.app_key"
+            android:value="your_ironsource_app_key"/>
+
+        <!-- Bigo Ads SDK配置 -->
+        <meta-data
+            android:name="com.bigo.sdk.APP_ID"
+            android:value="your_bigo_app_id"/>
+
+        <!-- InMobi SDK配置 -->
+        <meta-data
+            android:name="com.inmobi.sdk.APP_ID"
+            android:value="your_inmobi_app_id"/>
+    </application>
+
+</manifest> 

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新闻网站广告示例</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .top-banner-container {
+            width: 100%;
+            height: 90px;
+            margin: 20px 0;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+
+        .news-list article {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .news-list h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .news-list p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+
+        .news-meta {
+            font-size: 14px;
+            color: #999;
+        }
+
+        .sidebar {
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        .native-feed-container {
+            margin: 20px 0;
+            min-height: 250px;
+            background: #f5f5f5;
+        }
+
+        .ad-label {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+
+        .bottom-banner-container {
+            width: 100%;
+            height: 90px;
+            margin: 20px 0;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 1px solid #eee;
+            color: #666;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .news-list h2 {
+                font-size: 20px;
+            }
+
+            .top-banner-container,
+            .bottom-banner-container {
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>新闻网站示例</h1>
+    </header>
+
+    <!-- 顶部横幅广告 -->
+    <div class="ad-label">广告</div>
+    <div id="top-banner-container" class="top-banner-container"></div>
+
+    <div class="content">
+        <main class="news-list">
+            <article>
+                <h2>重大科技突破：量子计算机研究取得新进展</h2>
+                <p>科学家们宣布在量子计算领域取得重大突破，这将为未来计算技术带来革命性变化...</p>
+                <div class="news-meta">2024-02-20 | 科技</div>
+            </article>
+
+            <!-- 文章列表中的原生广告 -->
+            <div class="ad-label">推广内容</div>
+            <div id="native-feed-container" class="native-feed-container"></div>
+
+            <article>
+                <h2>全球气候变化：新研究揭示极地冰川加速融化</h2>
+                <p>最新研究显示，全球变暖导致极地冰川融化速度超过预期，科学家呼吁采取紧急行动...</p>
+                <div class="news-meta">2024-02-20 | 环境</div>
+            </article>
+
+            <article>
+                <h2>人工智能在医疗领域的新应用</h2>
+                <p>AI技术在疾病诊断和治疗方案制定方面展现出巨大潜力，多家医院开始试点应用...</p>
+                <div class="news-meta">2024-02-20 | 医疗</div>
+            </article>
+        </main>
+
+        <aside class="sidebar">
+            <h3>热门新闻</h3>
+            <ul>
+                <li>新能源汽车市场持续增长</li>
+                <li>全球芯片短缺问题有望缓解</li>
+                <li>5G技术在工业领域的应用</li>
+                <li>太空探索：火星探测器传回新发现</li>
+            </ul>
+
+            <!-- 侧边栏原生广告 -->
+            <div class="ad-label">推广内容</div>
+            <div id="sidebar-native-container" class="native-feed-container"></div>
+        </aside>
+    </div>
+
+    <!-- 底部横幅广告 -->
+    <div class="ad-label">广告</div>
+    <div id="bottom-banner-container" class="bottom-banner-container"></div>
+
+    <footer>
+        <p>© 2024 新闻网站示例 | 广告聚合平台演示</p>
+    </footer>
+
+    <!-- 加载广告SDK和示例代码 -->
+    <script src="../dist/bundle.js"></script>
+    <script src="usage.js"></script>
+</body>
+</html> 
