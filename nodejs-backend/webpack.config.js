@@ -1,15 +1,12 @@
 const path = require('path');
 
 module.exports = {
-  mode: 'production',
-  entry: './web-sdk/AdAggregator.js',
+  entry: './src/index.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
-    library: 'AdMediation',
-    libraryTarget: 'umd',
-    globalObject: 'this'
   },
+  target: 'node',
   module: {
     rules: [
       {
@@ -24,11 +21,10 @@ module.exports = {
       }
     ]
   },
-  optimization: {
-    minimize: true
-  },
   resolve: {
-    extensions: ['.js']
-  },
-  devtool: 'source-map'
+    extensions: ['.js'],
+    alias: {
+      '@': path.resolve(__dirname, 'src')
+    }
+  }
 }; 
