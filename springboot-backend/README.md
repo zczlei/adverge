@@ -45,17 +45,100 @@ AdVerge 后端服务是一个基于 Spring Boot 的广告聚合平台后端系�
 springboot-backend/
 ├── src/main/java/com/adverge/backend/
 │   ├── config/          # 配置类
+│   │   ├── AdNetworkConfig.java      # 广告网络配置
+│   │   ├── RedisConfig.java          # Redis配置
+│   │   ├── RestTemplateConfig.java   # HTTP客户端配置
+│   │   ├── SecurityConfig.java       # 安全配置
+│   │   ├── ThymeleafConfig.java      # 模板引擎配置
+│   │   └── WebConfig.java            # Web配置
+│   │
 │   ├── controller/      # 控制器
+│   │   ├── AdController.java         # 广告请求处理
+│   │   ├── AdUnitController.java     # 广告单元管理
+│   │   ├── AppController.java        # 应用管理
+│   │   ├── CompatibilityController.java  # 兼容性检查
+│   │   ├── ConfigController.java     # 配置管理
+│   │   ├── EventController.java      # 事件处理
+│   │   ├── PlatformManagementController.java  # 平台管理
+│   │   ├── StatController.java       # 数据统计
+│   │   └── admin/                    # 管理后台控制器
+│   │       ├── AdUnitAdminController.java
+│   │       ├── AppAdminController.java
+│   │       └── PlatformAdminController.java
+│   │
 │   ├── dto/            # 数据传输对象
+│   │   ├── AdEventDto.java           # 广告事件DTO
+│   │   ├── AdRequest.java            # 广告请求DTO
+│   │   ├── AdResponse.java           # 广告响应DTO
+│   │   ├── AdUnitRequest.java        # 广告单元请求DTO
+│   │   ├── AdUnitResponse.java       # 广告单元响应DTO
+│   │   ├── AppRequest.java           # 应用请求DTO
+│   │   ├── BidResponse.java          # 竞价响应DTO
+│   │   ├── PlatformResponse.java     # 平台响应DTO
+│   │   └── TrackRequest.java         # 追踪请求DTO
+│   │
 │   ├── model/          # 数据模型
+│   │   ├── AdUnit.java               # 广告单元模型
+│   │   ├── App.java                  # 应用模型
+│   │   ├── Config.java               # 配置模型
+│   │   ├── GeoData.java              # 地理位置数据
+│   │   ├── Metrics.java              # 指标数据
+│   │   ├── Platform.java             # 平台模型
+│   │   └── UserData.java             # 用户数据
+│   │
 │   ├── repository/     # 数据访问层
+│   │   ├── AdUnitRepository.java     # 广告单元仓库
+│   │   ├── AppRepository.java        # 应用仓库
+│   │   ├── ConfigRepository.java     # 配置仓库
+│   │   └── MetricsRepository.java    # 指标仓库
+│   │
 │   ├── service/        # 业务逻辑层
-│   └── security/       # 安全相关
+│   │   ├── AdNetworkManager.java     # 广告网络管理器
+│   │   ├── AdNetworkService.java     # 广告网络服务接口
+│   │   ├── AdService.java            # 广告服务
+│   │   ├── AdUnitService.java        # 广告单元服务
+│   │   ├── AppService.java           # 应用服务
+│   │   ├── ConfigService.java        # 配置服务
+│   │   ├── EventService.java         # 事件服务
+│   │   ├── SecurityService.java      # 安全服务
+│   │   └── impl/                     # 服务实现
+│   │       ├── AbstractAdNetworkService.java  # 抽象广告网络服务
+│   │       ├── AdColonyServiceImpl.java       # AdColony实现
+│   │       ├── AdNetworkManagerImpl.java      # 广告网络管理器实现
+│   │       ├── AdServiceImpl.java             # 广告服务实现
+│   │       ├── AdUnitServiceImpl.java         # 广告单元服务实现
+│   │       ├── AppLovinServiceImpl.java       # AppLovin实现
+│   │       ├── AppServiceImpl.java            # 应用服务实现
+│   │       ├── BigoAdsServiceImpl.java        # BigoAds实现
+│   │       ├── ChartboostServiceImpl.java     # Chartboost实现
+│   │       ├── ConfigServiceImpl.java         # 配置服务实现
+│   │       ├── EventServiceImpl.java          # 事件服务实现
+│   │       ├── FyberServiceImpl.java          # Fyber实现
+│   │       ├── InMobiServiceImpl.java         # InMobi实现
+│   │       ├── IronSourceServiceImpl.java     # IronSource实现
+│   │       ├── MahimetaServiceImpl.java       # Mahimeta实现
+│   │       ├── MintegralServiceImpl.java      # Mintegral实现
+│   │       ├── SecurityServiceImpl.java       # 安全服务实现
+│   │       ├── TopOnServiceImpl.java          # TopOn实现
+│   │       ├── UnityAdsServiceImpl.java       # UnityAds实现
+│   │       └── VungleServiceImpl.java         # Vungle实现
+│   │
+│   ├── security/       # 安全相关
+│   │   └── RequestSignatureInterceptor.java   # 请求签名拦截器
+│   │
+│   └── AdVergeApplication.java       # 应用入口
+│
 ├── src/main/resources/
-│   ├── application.yml  # 应用配置
-│   └── templates/      # Thymeleaf模板
-├── build.gradle        # Gradle构建配置
-└── pom.xml            # Maven构建配置
+│   ├── application.yml               # 应用配置
+│   └── templates/                    # Thymeleaf模板
+│       └── admin/                    # 管理后台模板
+│           ├── index.html            # 首页
+│           ├── platforms/            # 平台管理页面
+│           │   ├── form.html         # 平台表单
+│           │   └── list.html         # 平台列表
+│
+├── build.gradle                      # Gradle构建配置
+└── pom.xml                          # Maven构建配置
 ```
 
 ## 支持的广告平台
