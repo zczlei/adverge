@@ -34,4 +34,65 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
-.cache/ 
+.cache/
+
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs
+hs_err_pid*
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Android
+*.apk
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+build/
+.gradle/
+local.properties
+proguard/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log 
