@@ -1,71 +1,52 @@
 const mongoose = require('mongoose');
 
-const configSchema = new mongoose.Schema({
-  platformPriority: [{
-    platform: {
-      type: String,
-      required: true,
-      enum: ['BigoAds', 'InMobi', 'TopOn', 'Mintegral', 'Vungle', 'Fyber', 'Chartboost', 'ironSource', 'UnityAds', 'Mahimeta']
+const platformSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true,
+        enum: ['topon', 'bigo', 'mintegral', 'ironsource', 'inmobi', 'admob', 'facebook', 'vungle', 'chartboost', 'unity', 'fyber', 'mahimeta']
     },
-    weight: {
-      type: Number,
-      required: true,
-      min: 0,
-      max: 1
-    }
-  }],
-  bidTimeout: {
-    type: Number,
-    default: 100, // 毫秒
-    min: 50,
-    max: 500
-  },
-  cacheDuration: {
-    type: Number,
-    default: 300, // 秒
-    min: 60,
-    max: 3600
-  },
-  adFormats: [{
-    type: {
-      type: String,
-      required: true,
-      enum: ['banner', 'native', 'interstitial', 'video']
-    },
-    dimensions: {
-      width: Number,
-      height: Number
-    },
-    platforms: [{
-      type: String,
-      enum: ['BigoAds', 'InMobi', 'TopOn', 'Mintegral', 'Vungle', 'Fyber', 'Chartboost', 'ironSource', 'UnityAds', 'Mahimeta']
-    }]
-  }],
-  frequencyCapping: {
     enabled: {
-      type: Boolean,
-      default: true
+        type: Boolean,
+        default: true
     },
-    maxImpressions: {
-      type: Number,
-      default: 3
-    },
-    timeWindow: {
-      type: Number,
-      default: 3600 // 秒
+    appId: String,
+    appKey: String,
+    placementId: String,
+    bidFloor: {
+        type: Number,
+        default: 0
     }
-  },
-  targeting: {
-    geo: [String],
-    device: [String],
-    os: [String]
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  }
-}, {
-  timestamps: true
+});
+
+const configSchema = new mongoose.Schema({
+    bidTimeout: {
+        type: Number,
+        default: 5000,
+        min: 1000,
+        max: 30000
+    },
+    cacheExpiry: {
+        type: Number,
+        default: 300,
+        min: 60,
+        max: 3600
+    },
+    platforms: [platformSchema],
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
+    updatedAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+// 更新时自动更新 updatedAt
+configSchema.pre('save', function(next) {
+    this.updatedAt = Date.now();
+    next();
 });
 
 module.exports = mongoose.model('Config', configSchema); 

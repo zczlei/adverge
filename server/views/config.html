@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广告平台配置管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .config-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.25rem;
+        }
+        .platform-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .validation-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        .save-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="mb-4">广告平台配置管理</h1>
+        
+        <!-- 全局配置 -->
+        <div class="config-section">
+            <h3>全局配置</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">竞价超时时间(ms)</label>
+                        <input type="number" class="form-control" id="bidTimeout" value="100">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">缓存过期时间(s)</label>
+                        <input type="number" class="form-control" id="cacheExpiry" value="300">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 各平台配置 -->
+        <div id="platformConfigs">
+            <!-- TopOn -->
+            <div class="config-section">
+                <div class="platform-header">
+                    <h3>TopOn 配置</h3>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toponEnabled">
+                        <label class="form-check-label">启用</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">App ID</label>
+                            <input type="text" class="form-control" id="toponAppId">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">App Key</label>
+                            <input type="password" class="form-control" id="toponAppKey">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bigo Ads -->
+            <div class="config-section">
+                <div class="platform-header">
+                    <h3>Bigo Ads 配置</h3>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="bigoEnabled">
+                        <label class="form-check-label">启用</label>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">App ID</label>
+                            <input type="text" class="form-control" id="bigoAppId">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">App Key</label>
+                            <input type="password" class="form-control" id="bigoAppKey">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 其他平台配置... -->
+        </div>
+
+        <button class="btn btn-primary save-btn" onclick="saveConfig()">保存配置</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const config = await response.json();
+                
+                // 设置全局配置
+                document.getElementById('bidTimeout').value = config.bidTimeout || 100;
+                document.getElementById('cacheExpiry').value = config.cacheExpiry || 300;
+                
+                // 设置各平台配置
+                Object.entries(config.platforms || {}).forEach(([platform, platformConfig]) => {
+                    const enabledId = `${platform.toLowerCase()}Enabled`;
+                    const appIdId = `${platform.toLowerCase()}AppId`;
+                    const appKeyId = `${platform.toLowerCase()}AppKey`;
+                    
+                    if (document.getElementById(enabledId)) {
+                        document.getElementById(enabledId).checked = platformConfig.enabled;
+                        document.getElementById(appIdId).value = platformConfig.appId || '';
+                        document.getElementById(appKeyId).value = platformConfig.appKey || '';
+                    }
+                });
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                alert('加载配置失败，请刷新页面重试');
+            }
+        }
+
+        // 保存配置
+        async function saveConfig() {
+            try {
+                const config = {
+                    bidTimeout: parseInt(document.getElementById('bidTimeout').value),
+                    cacheExpiry: parseInt(document.getElementById('cacheExpiry').value),
+                    platforms: {}
+                };
+
+                // 收集各平台配置
+                ['topon', 'bigo', 'inmobi', 'mintegral', 'vungle', 'fyber', 
+                 'chartboost', 'ironsource', 'unityads', 'mahimeta'].forEach(platform => {
+                    const enabledId = `${platform}Enabled`;
+                    const appIdId = `${platform}AppId`;
+                    const appKeyId = `${platform}AppKey`;
+                    
+                    if (document.getElementById(enabledId)) {
+                        config.platforms[platform] = {
+                            enabled: document.getElementById(enabledId).checked,
+                            appId: document.getElementById(appIdId).value,
+                            appKey: document.getElementById(appKeyId).value
+                        };
+                    }
+                });
+
+                // 验证配置
+                const validationResult = validateConfig(config);
+                if (!validationResult.valid) {
+                    alert(validationResult.message);
+                    return;
+                }
+
+                // 保存配置
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+
+                if (response.ok) {
+                    alert('配置保存成功');
+                } else {
+                    throw new Error('保存配置失败');
+                }
+            } catch (error) {
+                console.error('保存配置失败:', error);
+                alert('保存配置失败，请重试');
+            }
+        }
+
+        // 验证配置
+        function validateConfig(config) {
+            // 验证全局配置
+            if (config.bidTimeout < 50 || config.bidTimeout > 1000) {
+                return {
+                    valid: false,
+                    message: '竞价超时时间必须在50-1000ms之间'
+                };
+            }
+
+            if (config.cacheExpiry < 60 || config.cacheExpiry > 3600) {
+                return {
+                    valid: false,
+                    message: '缓存过期时间必须在60-3600秒之间'
+                };
+            }
+
+            // 验证各平台配置
+            for (const [platform, platformConfig] of Object.entries(config.platforms)) {
+                if (platformConfig.enabled) {
+                    if (!platformConfig.appId) {
+                        return {
+                            valid: false,
+                            message: `${platform} 的 App ID 不能为空`
+                        };
+                    }
+                    if (!platformConfig.appKey) {
+                        return {
+                            valid: false,
+                            message: `${platform} 的 App Key 不能为空`
+                        };
+                    }
+                }
+            }
+
+            return { valid: true };
+        }
+
+        // 页面加载时加载配置
+        document.addEventListener('DOMContentLoaded', loadConfig);
+    </script>
+</body>
+</html> 
