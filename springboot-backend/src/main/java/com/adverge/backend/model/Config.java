@@ -35,7 +35,7 @@ public class Config {
     /**
      * 平台配置列表
      */
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "config_id")
     private List<Platform> platforms = new ArrayList<>();
     

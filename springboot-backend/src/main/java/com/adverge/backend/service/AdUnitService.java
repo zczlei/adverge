@@ -56,4 +56,9 @@ public interface AdUnitService {
      * 获取应用的活跃广告位
      */
     List<AdUnit> getActiveAdUnitsByAppId(String appId);
+    
+    /**
+     * 切换广告位状态
+     */
+    AdUnit toggleAdUnitStatus(String id);
 } 

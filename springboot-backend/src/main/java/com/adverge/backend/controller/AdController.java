@@ -17,6 +17,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
+@RequestMapping("/api")
 @RequiredArgsConstructor
 public class AdController {
 

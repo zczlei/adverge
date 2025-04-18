@@ -151,4 +151,11 @@ public class AdUnitServiceImpl implements AdUnitService {
                 .orElseThrow(() -> new EntityNotFoundException("应用不存在: " + appId));
         return adUnitRepository.findByAppIdAndActive(appId, true);
     }
+
+    @Override
+    public AdUnit toggleAdUnitStatus(String id) {
+        AdUnit adUnit = getAdUnitById(id);
+        adUnit.setActive(!adUnit.isActive());
+        return adUnitRepository.save(adUnit);
+    }
 } 
