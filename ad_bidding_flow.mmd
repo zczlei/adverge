@@ -1,0 +1,62 @@
+sequenceDiagram
+    participant Client as 客户端
+    participant Server as 服务器
+    participant AN1 as 广告平台1
+    participant AN2 as 广告平台2
+    participant AN3 as 广告平台3
+    participant Cache as 缓存服务
+    participant Kafka as 消息队列
+
+    Client->>Server: 1. 发起广告请求
+    Note over Client,Server: 包含广告位ID、设备信息、用户信息等
+    
+    Server->>Cache: 2. 检查缓存
+    alt 缓存命中
+        Cache-->>Server: 返回缓存的广告
+        Server-->>Client: 返回胜出平台信息
+    else 缓存未命中
+        Server->>Kafka: 3. 发送竞价请求
+        Note over Server,Kafka: 异步处理竞价
+        
+        par 并行询价
+            Server->>AN1: 4.1 发起竞价请求
+            Server->>AN2: 4.2 发起竞价请求
+            Server->>AN3: 4.3 发起竞价请求
+        end
+        
+        par 竞价响应
+            AN1-->>Server: 5.1 返回竞价结果
+            AN2-->>Server: 5.2 返回竞价结果
+            AN3-->>Server: 5.3 返回竞价结果
+        end
+        
+        Server->>Server: 6. 选择最高出价
+        Note over Server: 根据eCPM选择胜出平台
+        
+        Server->>AN1: 7. 通知胜出平台
+        Note over Server,AN1: 仅通知胜出平台
+        
+        Server->>Cache: 8. 缓存竞价结果
+        Note over Server,Cache: 缓存5分钟
+        
+        Server-->>Client: 9. 返回胜出平台信息
+        Note over Server,Client: 包含平台名称、广告位ID等
+    end
+    
+    alt 胜出平台为AN1
+        Client->>AN1: 10.1 调用AN1 SDK加载广告
+        AN1-->>Client: 返回广告内容
+    else 胜出平台为AN2
+        Client->>AN2: 10.2 调用AN2 SDK加载广告
+        AN2-->>Client: 返回广告内容
+    else 胜出平台为AN3
+        Client->>AN3: 10.3 调用AN3 SDK加载广告
+        AN3-->>Client: 返回广告内容
+    end
+    
+    Client->>Client: 11. 展示广告
+    Client->>Server: 12. 发送展示通知
+    Server->>AN1: 13. 转发展示通知
+    
+    Client->>Server: 14. 发送点击通知
+    Server->>AN1: 15. 转发点击通知 
