@@ -1,133 +1,155 @@
-# AdVerge Spring Boot 后端
+# AdVerge Spring Boot 后端服务
 
-## 项目说明
-
-这是一个使用Spring Boot框架开发的广告服务后端，用于替代原有的Node.js实现。
+AdVerge 后端服务是一个基于 Spring Boot 的广告聚合平台后端系统，用于管理和优化多个广告平台的广告投放。
 
 ## 技术栈
 
-- **Spring Boot**: 核心框架
-- **Spring Data MongoDB**: MongoDB数据库访问
-- **Spring Data Redis**: Redis缓存支持
-- **Spring Kafka**: Kafka消息队列集成
-- **Spring Security**: 安全框架
-- **Lombok**: 简化Java代码
-- **Maven**: 项目管理
+- **框架**: Spring Boot
+- **构建工具**: Gradle / Maven (双构建支持)
+- **数据库**: MySQL
+- **缓存**: Redis
+- **模板引擎**: Thymeleaf (用于管理后台)
+- **安全**: Spring Security
+- **API文档**: Swagger/OpenAPI
 
-## 目录结构
+## 主要功能
+
+1. **广告平台管理**
+   - 支持多个主流广告平台的接入
+   - 统一的广告请求和响应接口
+   - 广告平台配置管理
+
+2. **广告单元管理**
+   - 广告位创建和配置
+   - 广告单元状态监控
+   - 广告投放策略设置
+
+3. **应用管理**
+   - 应用信息管理
+   - 应用级别的广告配置
+   - 应用数据统计
+
+4. **数据统计**
+   - 广告展示和点击数据统计
+   - 收益数据分析
+   - 实时数据监控
+
+5. **管理后台**
+   - 平台配置管理
+   - 数据可视化
+   - 用户权限管理
+
+## 项目结构
 
 ```
 springboot-backend/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/
-│   │   │       └── adverge/
-│   │   │           └── backend/
-│   │   │               ├── config/      # 配置类
-│   │   │               ├── controller/  # 控制器
-│   │   │               ├── dto/         # 数据传输对象
-│   │   │               ├── model/       # 数据模型
-│   │   │               ├── repository/  # 数据仓库
-│   │   │               ├── security/    # 安全相关
-│   │   │               ├── service/     # 服务层
-│   │   │               │   └── impl/    # 服务实现
-│   │   │               ├── util/        # 工具类
-│   │   │               └── AdVergeApplication.java  # 应用入口
-│   │   └── resources/
-│   │       ├── application.yml          # 应用配置
-│   │       └── application-prod.yml     # 生产环境配置
-│   └── test/                            # 测试代码
-├── pom.xml                              # Maven配置
-└── README.md                            # 本文档
+├── src/main/java/com/adverge/backend/
+│   ├── config/          # 配置类
+│   ├── controller/      # 控制器
+│   ├── dto/            # 数据传输对象
+│   ├── model/          # 数据模型
+│   ├── repository/     # 数据访问层
+│   ├── service/        # 业务逻辑层
+│   └── security/       # 安全相关
+├── src/main/resources/
+│   ├── application.yml  # 应用配置
+│   └── templates/      # Thymeleaf模板
+├── build.gradle        # Gradle构建配置
+└── pom.xml            # Maven构建配置
 ```
 
-## 核心功能
+## 支持的广告平台
 
-1. **广告竞价请求**
-   - 接收应用的广告请求
-   - 向多个广告平台发送竞价请求
-   - 选择最高价格的广告返回
+- AdColony
+- AppLovin
+- Bigo Ads
+- Chartboost
+- Fyber
+- InMobi
+- IronSource
+- Mahimeta
+- Mintegral
+- TopOn
+- Unity Ads
+- Vungle
 
-2. **数据追踪**
-   - 记录广告展示
-   - 记录广告点击
-   - 统计收益数据
-
-3. **安全机制**
-   - 请求签名验证
-   - API访问控制
-
-## 构建运行
+## 快速开始
 
 ### 环境要求
 
-- JDK 11+
-- Maven 3.6+
-- MongoDB
-- Redis
-- Kafka
+- JDK 17 或更高版本
+- MySQL 8.0+
+- Redis 6.0+
+- Maven 3.8+ 或 Gradle 7.0+
 
-### 编译构建
+### 配置
 
+1. 数据库配置（application.yml）:
+```yaml
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/adverge
+    username: your_username
+    password: your_password
+```
+
+2. Redis配置:
+```yaml
+spring:
+  redis:
+    host: localhost
+    port: 6379
+```
+
+### 构建和运行
+
+使用 Maven:
 ```bash
-mvn clean package
+cd springboot-backend
+mvn clean install
+java -jar target/adverge-backend.jar
 ```
 
-### 运行应用
-
+或使用 Gradle:
 ```bash
-java -jar target/adverge-backend-1.0.0.jar
+cd springboot-backend
+gradle clean build
+java -jar build/libs/adverge-backend.jar
 ```
 
-### 环境变量配置
+### 访问
 
-- `MONGODB_URI`: MongoDB连接字符串
-- `REDIS_HOST`: Redis主机地址
-- `REDIS_PORT`: Redis端口
-- `REDIS_PASSWORD`: Redis密码（可选）
-- `KAFKA_SERVERS`: Kafka服务器地址
-- `JWT_SECRET`: JWT密钥
-- `DISABLE_SIGNATURE_CHECK`: 禁用签名检查（开发环境使用）
+- API接口: http://localhost:8080/api
+- 管理后台: http://localhost:8080/admin
+- API文档: http://localhost:8080/swagger-ui.html
 
-## API接口
+## API 文档
 
-### 广告请求
+主要API端点:
 
-```
-GET /api/ad/{adUnitId}
-```
+- `/api/ad`: 广告请求和响应
+- `/api/app`: 应用管理
+- `/api/platform`: 平台管理
+- `/api/stats`: 数据统计
+- `/api/events`: 事件追踪
 
-### 竞价请求
+详细的API文档可以在运行项目后通过Swagger UI查看。
 
-```
-POST /api/bid/{adUnitId}
-```
+## 安全性
 
-### 记录展示
+- 所有API请求需要进行签名验证
+- 管理后台采用基于角色的访问控制
+- 支持API访问频率限制
+- 数据传输采用HTTPS加密
 
-```
-POST /api/track/impression/{adId}
-```
+## 贡献指南
 
-### 记录点击
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 创建Pull Request
 
-```
-POST /api/track/click/{adId}
-```
+## 许可证
 
-## 与Node.js版本的区别
-
-1. 使用Spring Boot框架代替Express
-2. 使用Maven管理依赖而非npm
-3. 更严格的类型系统和数据验证
-4. 更好的并发处理能力
-5. 更完善的依赖注入机制
-
-## 未来计划
-
-- 添加监控和报警功能
-- 优化竞价逻辑
-- 添加更多广告平台集成
-- 实现A/B测试框架
-- 增加管理后台API 
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情 
