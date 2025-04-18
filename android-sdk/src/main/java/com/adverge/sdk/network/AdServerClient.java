@@ -11,7 +11,15 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class AdServerClient {
     private static final String TAG = "AdServerClient";
@@ -209,5 +217,106 @@ public class AdServerClient {
     public void trackClick(String adUnitId, String platform) {
         Logger.d(TAG, "发送广告点击追踪: " + adUnitId);
         // 实现广告点击追踪
+    }
+
+    public void getPlatforms(PlatformCallback callback) {
+        String url = serverUrl + "/platform-config";
+        Request request = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+
+        // 这里需要替换为实际的OkHttp调用
+        // 这里使用OkHttp或其他HTTP客户端发送请求
+        // 实际实现中需要替换为真实的网络请求代码
+        try {
+            // 模拟网络请求
+            Thread.sleep(100);
+            
+            // 模拟服务器响应
+            List<Platform> platforms = null; // 这里需要替换为实际的解析逻辑
+            
+            callback.onSuccess(platforms);
+        } catch (Exception e) {
+            callback.onError(e.getMessage());
+        }
+    }
+
+    public void savePlatform(Platform platform, PlatformCallback callback) {
+        String url = serverUrl + "/platform-config";
+        String json = ""; // 这里需要替换为实际的序列化逻辑
+        
+        RequestBody body = RequestBody.create(json, MediaType.parse("application/json"));
+        
+        Request request = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+
+        // 这里需要替换为实际的OkHttp调用
+        // 这里使用OkHttp或其他HTTP客户端发送请求
+        // 实际实现中需要替换为真实的网络请求代码
+        try {
+            // 模拟网络请求
+            Thread.sleep(100);
+            
+            // 模拟服务器响应
+            List<Platform> savedPlatforms = null; // 这里需要替换为实际的解析逻辑
+            
+            callback.onSuccess(savedPlatforms);
+        } catch (Exception e) {
+            callback.onError(e.getMessage());
+        }
+    }
+
+    public void enablePlatform(String name, PlatformCallback callback) {
+        String url = serverUrl + "/platform-config/" + name + "/enable";
+        Request request = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create("", MediaType.parse("application/json")))
+                .build();
+
+        // 这里需要替换为实际的OkHttp调用
+        // 这里使用OkHttp或其他HTTP客户端发送请求
+        // 实际实现中需要替换为真实的网络请求代码
+        try {
+            // 模拟网络请求
+            Thread.sleep(100);
+            
+            // 模拟服务器响应
+            List<Platform> enabledPlatforms = null; // 这里需要替换为实际的解析逻辑
+            
+            callback.onSuccess(enabledPlatforms);
+        } catch (Exception e) {
+            callback.onError(e.getMessage());
+        }
+    }
+
+    public void disablePlatform(String name, PlatformCallback callback) {
+        String url = serverUrl + "/platform-config/" + name + "/disable";
+        Request request = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create("", MediaType.parse("application/json")))
+                .build();
+
+        // 这里需要替换为实际的OkHttp调用
+        // 这里使用OkHttp或其他HTTP客户端发送请求
+        // 实际实现中需要替换为真实的网络请求代码
+        try {
+            // 模拟网络请求
+            Thread.sleep(100);
+            
+            // 模拟服务器响应
+            List<Platform> disabledPlatforms = null; // 这里需要替换为实际的解析逻辑
+            
+            callback.onSuccess(disabledPlatforms);
+        } catch (Exception e) {
+            callback.onError(e.getMessage());
+        }
+    }
+
+    public interface PlatformCallback {
+        void onSuccess(List<Platform> platforms);
+        void onError(String error);
     }
 } 
