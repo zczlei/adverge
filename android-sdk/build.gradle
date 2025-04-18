@@ -64,12 +64,12 @@ dependencies {
     // Chartboost SDK
     implementation 'com.chartboost:chartboost-sdk:9.3.1'
     
-    // Mintegral SDK
-    implementation 'com.mbridge.msdk.oversea:reward:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:newinterstitial:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:mbbanner:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:mbsplash:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:mbbid:16.6.31'
+    // Mintegral SDK - 更新到最新版本
+    implementation 'com.mbridge.msdk.oversea:reward:16.6.41'
+    implementation 'com.mbridge.msdk.oversea:newinterstitial:16.6.41'
+    implementation 'com.mbridge.msdk.oversea:mbbanner:16.6.41'
+    implementation 'com.mbridge.msdk.oversea:mbsplash:16.6.41'
+    implementation 'com.mbridge.msdk.oversea:mbbid:16.6.41'
     
     // Fyber SDK
     implementation 'com.fyber:marketplace-sdk:8.2.4'

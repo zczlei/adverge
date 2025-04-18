@@ -2,7 +2,7 @@ const path = require('path');
 
 module.exports = {
   mode: 'production',
-  entry: './src/sdk/AdAggregator.js',
+  entry: './web-sdk/AdAggregator.js',
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'bundle.js',
