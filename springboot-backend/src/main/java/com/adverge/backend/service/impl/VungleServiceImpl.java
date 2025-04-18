@@ -3,6 +3,7 @@ package com.adverge.backend.service.impl;
 import com.adverge.backend.dto.AdRequest;
 import com.adverge.backend.dto.BidResponse;
 import com.adverge.backend.model.Config;
+import com.adverge.backend.service.ConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,24 +25,28 @@ import java.util.concurrent.CompletableFuture;
 public class VungleServiceImpl extends AbstractAdNetworkService {
 
     private static final String PLATFORM_NAME = "Vungle";
+    private final ConfigService configService;
     
-    public VungleServiceImpl(RestTemplate restTemplate, Config config) {
+    public VungleServiceImpl(RestTemplate restTemplate, ConfigService configService) {
         super(restTemplate);
+        this.configService = configService;
         
-        // 从配置中获取Vungle平台的配置信息
-        Config.Platform vungleConfig = config.getPlatforms().stream()
-                .filter(p -> PLATFORM_NAME.equalsIgnoreCase(p.getName()))
-                .findFirst()
-                .orElse(null);
-        
-        if (vungleConfig != null) {
-            this.apiUrl = "https://ads.vungle.com/api";
-            this.appId = vungleConfig.getAppId();
-            this.appKey = vungleConfig.getAppKey();
-            this.placementId = vungleConfig.getPlacementId();
-            this.bidFloor = vungleConfig.getBidFloor();
-        } else {
-            log.warn("Vungle平台配置未找到");
+        try {
+            // 从配置服务中获取Vungle平台的配置信息
+            Config.Platform vungleConfig = configService.getPlatform(PLATFORM_NAME);
+            
+            if (vungleConfig != null) {
+                this.apiUrl = "https://api.vungle.com";
+                this.appId = vungleConfig.getAppId();
+                this.appKey = vungleConfig.getAppKey();
+                this.placementId = vungleConfig.getPlacementId();
+                this.bidFloor = vungleConfig.getBidFloor();
+            } else {
+                log.warn("Vungle平台配置未找到");
+                this.bidFloor = 0.0;
+            }
+        } catch (Exception e) {
+            log.error("初始化Vungle服务失败", e);
             this.bidFloor = 0.0;
         }
     }

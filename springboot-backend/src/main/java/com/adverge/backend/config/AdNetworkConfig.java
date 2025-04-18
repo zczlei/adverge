@@ -21,6 +21,7 @@ public class AdNetworkConfig {
         
         // 创建默认配置
         Config config = new Config();
+        config.setId(java.util.UUID.randomUUID().toString());
         config.setPlatforms(createDefaultPlatforms());
         return configRepository.save(config);
     }

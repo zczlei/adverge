@@ -43,6 +43,11 @@ public interface AdUnitService {
     List<AdUnit> getAdUnitsByType(String type);
     
     /**
+     * 根据多个ID获取广告位
+     */
+    List<AdUnit> getAdUnitsByIds(List<String> ids);
+    
+    /**
      * 获取活跃广告位
      */
     List<AdUnit> getActiveAdUnits();

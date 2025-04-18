@@ -86,6 +86,20 @@ public class EventServiceImpl implements EventService {
     }
     
     @Override
+    public void logWinEvent(String appId, String adUnitId, String platform, Double price) {
+        AdEventDto event = AdEventDto.builder()
+                .eventType(AdEventDto.EventType.WIN)
+                .appId(appId)
+                .adUnitId(adUnitId)
+                .platform(platform)
+                .price(price != null ? price : 0.0)
+                .eventTime(new Date())
+                .build();
+        
+        processEvent(event);
+    }
+    
+    @Override
     public void logImpressionEvent(String appId, String adUnitId, String platform, String adId) {
         AdEventDto event = AdEventDto.builder()
                 .eventType(AdEventDto.EventType.IMPRESSION)

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @RestController
-@RequestMapping("/admin/platforms")
+@RequestMapping("/api/admin/platforms")
 @RequiredArgsConstructor
 public class PlatformManagementController {
 

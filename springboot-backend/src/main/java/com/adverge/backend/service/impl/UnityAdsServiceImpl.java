@@ -3,6 +3,7 @@ package com.adverge.backend.service.impl;
 import com.adverge.backend.dto.AdRequest;
 import com.adverge.backend.dto.BidResponse;
 import com.adverge.backend.model.Config;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -28,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
 public class UnityAdsServiceImpl extends AbstractAdNetworkService {
 
     private static final String PLATFORM_NAME = "UnityAds";
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     public UnityAdsServiceImpl(RestTemplate restTemplate, Config config) {
         super(restTemplate);

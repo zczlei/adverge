@@ -172,15 +172,13 @@ public class StatController {
      */
     @GetMapping("/ecpm")
     public ResponseEntity<List<Map<String, Object>>> getPlatformECPM() {
-        Set<Object> platformsWithScores = redisTemplate.opsForZSet().reverseRangeWithScores("platform:ecpm", 0, -1);
+        Set<org.springframework.data.redis.core.ZSetOperations.TypedTuple<String>> platformsWithScores =
+                redisTemplate.opsForZSet().reverseRangeWithScores("platform:ecpm", 0, -1);
         
         List<Map<String, Object>> result = new ArrayList<>();
         if (platformsWithScores != null) {
             int rank = 1;
-            for (Object obj : platformsWithScores) {
-                org.springframework.data.redis.connection.RedisZSetCommands.Tuple tuple = 
-                        (org.springframework.data.redis.connection.RedisZSetCommands.Tuple) obj;
-                
+            for (org.springframework.data.redis.core.ZSetOperations.TypedTuple<String> tuple : platformsWithScores) {
                 Map<String, Object> platformECPM = new HashMap<>();
                 platformECPM.put("rank", rank++);
                 platformECPM.put("platform", tuple.getValue());

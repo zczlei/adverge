@@ -39,6 +39,11 @@ public class PlatformResponse {
     private String appKey;
     
     /**
+     * 广告位ID
+     */
+    private String placementId;
+    
+    /**
      * 是否启用
      */
     private boolean enabled;
@@ -63,6 +68,7 @@ public class PlatformResponse {
                 .type("bidding") // 默认类型
                 .appId(platform.getAppId())
                 .appKey(platform.getAppKey())
+                .placementId(platform.getPlacementId())
                 .enabled(platform.isEnabled())
                 .bidFloor(platform.getBidFloor())
                 .build();
@@ -81,5 +87,21 @@ public class PlatformResponse {
         return platforms.stream()
                 .map(PlatformResponse::fromPlatform)
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * 获取广告位ID
+     * @return 广告位ID
+     */
+    public String getPlacementId() {
+        return placementId;
+    }
+    
+    /**
+     * 设置广告位ID
+     * @param placementId 广告位ID
+     */
+    public void setPlacementId(String placementId) {
+        this.placementId = placementId;
     }
 } 

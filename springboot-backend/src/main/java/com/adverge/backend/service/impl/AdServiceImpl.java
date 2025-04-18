@@ -22,6 +22,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpServletRequest;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -149,7 +150,15 @@ public class AdServiceImpl implements AdService {
             // 过滤出有效响应
             List<BidResponse> validBids = bids.stream()
                     .filter(Objects::nonNull)
-                    .filter(bid -> bid.getPrice() >= adRequest.getFloorPrice())
+                    .filter(bid -> {
+                        if (adRequest.getFloorPrice() == null) {
+                            return true;
+                        }
+                        if (bid.getPrice() == null) {
+                            return false;
+                        }
+                        return bid.getPrice() >= adRequest.getFloorPrice().doubleValue();
+                    })
                     .collect(Collectors.toList());
             
             // 记录竞价事件
@@ -222,7 +231,12 @@ public class AdServiceImpl implements AdService {
             if (metricsOpt.isPresent()) {
                 Metrics metrics = metricsOpt.get();
                 metrics.setClicks(metrics.getClicks() + 1);
-                metrics.setRevenue(metrics.getRevenue() + trackRequest.getRevenue());
+                // 将 double 转换为 BigDecimal 后再相加
+                if (metrics.getRevenue() == null) {
+                    metrics.setRevenue(BigDecimal.valueOf(trackRequest.getRevenue()));
+                } else {
+                    metrics.setRevenue(metrics.getRevenue().add(BigDecimal.valueOf(trackRequest.getRevenue())));
+                }
                 metrics.setLastClickTime(new Date());
                 metricsRepository.save(metrics);
             }
@@ -250,6 +264,17 @@ public class AdServiceImpl implements AdService {
             Metrics metrics = metricsRepository.findByPlatformAndAdId(bidResponse.getSource(), bidResponse.getAdId())
                     .orElse(new Metrics());
             
+            // 如果是新创建的指标，设置ID和其他初始值
+            if (metrics.getId() == null) {
+                metrics.setId(UUID.randomUUID().toString());
+                metrics.setPlacementId(bidResponse.getPlacementId());
+                metrics.setBids(0);
+                metrics.setWins(0);
+                metrics.setImpressions(0);
+                metrics.setClicks(0);
+                metrics.setCreatedAt(new Date());
+            }
+            
             metrics.setPlatform(bidResponse.getSource());
             metrics.setAdId(bidResponse.getAdId());
             metrics.setAdUnitId(adUnitId);
@@ -258,6 +283,7 @@ public class AdServiceImpl implements AdService {
             metrics.setPrice(bidResponse.getPrice());
             metrics.setLastBidTime(new Date());
             metrics.setLastWinTime(new Date());
+            metrics.setUpdatedAt(new Date());
             
             metricsRepository.save(metrics);
         } catch (Exception e) {

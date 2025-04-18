@@ -3,6 +3,7 @@ package com.adverge.backend.service.impl;
 import com.adverge.backend.dto.AdRequest;
 import com.adverge.backend.dto.BidResponse;
 import com.adverge.backend.model.Config;
+import com.adverge.backend.service.ConfigService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -24,24 +25,28 @@ import java.util.concurrent.CompletableFuture;
 public class AdColonyServiceImpl extends AbstractAdNetworkService {
 
     private static final String PLATFORM_NAME = "AdColony";
+    private final ConfigService configService;
     
-    public AdColonyServiceImpl(RestTemplate restTemplate, Config config) {
+    public AdColonyServiceImpl(RestTemplate restTemplate, ConfigService configService) {
         super(restTemplate);
+        this.configService = configService;
         
-        // 从配置中获取AdColony平台的配置信息
-        Config.Platform adColonyConfig = config.getPlatforms().stream()
-                .filter(p -> PLATFORM_NAME.equalsIgnoreCase(p.getName()))
-                .findFirst()
-                .orElse(null);
-        
-        if (adColonyConfig != null) {
-            this.apiUrl = "https://adc3-launch.adcolony.com/v2";
-            this.appId = adColonyConfig.getAppId();
-            this.appKey = adColonyConfig.getAppKey();
-            this.placementId = adColonyConfig.getPlacementId();
-            this.bidFloor = adColonyConfig.getBidFloor();
-        } else {
-            log.warn("AdColony平台配置未找到");
+        try {
+            // 从配置服务中获取AdColony平台的配置信息
+            Config.Platform adColonyConfig = configService.getPlatform(PLATFORM_NAME);
+            
+            if (adColonyConfig != null) {
+                this.apiUrl = "https://adc3-launch.adcolony.com/v2";
+                this.appId = adColonyConfig.getAppId();
+                this.appKey = adColonyConfig.getAppKey();
+                this.placementId = adColonyConfig.getPlacementId();
+                this.bidFloor = adColonyConfig.getBidFloor();
+            } else {
+                log.warn("AdColony平台配置未找到");
+                this.bidFloor = 0.0;
+            }
+        } catch (Exception e) {
+            log.error("初始化AdColony服务失败", e);
             this.bidFloor = 0.0;
         }
     }

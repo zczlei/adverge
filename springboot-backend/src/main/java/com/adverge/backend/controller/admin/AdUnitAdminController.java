@@ -91,8 +91,8 @@ public class AdUnitAdminController {
             // 创建广告位
             AdUnit adUnit = adUnitService.createAdUnit(adUnitRequest);
             
-            // 更新应用的广告位关联
-            appService.addAdUnitId(adUnitRequest.getAppId(), adUnit.getId());
+            // 更新应用的广告单元关联
+            appService.addAdUnitId(adUnitRequest.getAppId(), adUnit.getId().toString());
             
             redirectAttributes.addFlashAttribute("success", "广告位 '" + adUnit.getName() + "' 创建成功");
             

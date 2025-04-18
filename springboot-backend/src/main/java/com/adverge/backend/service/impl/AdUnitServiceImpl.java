@@ -11,7 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityNotFoundException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -38,12 +41,14 @@ public class AdUnitServiceImpl implements AdUnitService {
         App app = appService.getAppById(adUnitRequest.getAppId())
                 .orElseThrow(() -> new EntityNotFoundException("应用不存在: " + adUnitRequest.getAppId()));
         
-        // 检查广告位名称是否已在该应用下存在
-        if (adUnitRepository.findByAppIdAndName(adUnitRequest.getAppId(), adUnitRequest.getName()).isPresent()) {
-            throw new IllegalArgumentException("该应用下已存在同名广告位: " + adUnitRequest.getName());
-        }
+        // 检查广告位名称是否已被同一应用下的其他广告位使用
+        adUnitRepository.findByAppIdAndName(adUnitRequest.getAppId(), adUnitRequest.getName())
+                .ifPresent(existingAdUnit -> {
+                    throw new IllegalArgumentException("该应用下已存在同名广告位: " + adUnitRequest.getName());
+                });
         
         AdUnit adUnit = new AdUnit();
+        adUnit.setId(UUID.randomUUID().toString());
         adUnit.setName(adUnitRequest.getName());
         adUnit.setAppId(adUnitRequest.getAppId());
         adUnit.setType(adUnitRequest.getType());
@@ -51,6 +56,8 @@ public class AdUnitServiceImpl implements AdUnitService {
         adUnit.setActive(adUnitRequest.isActive());
         adUnit.setFloorPrice(adUnitRequest.getFloorPrice());
         adUnit.setRefreshInterval(adUnitRequest.getRefreshInterval());
+        adUnit.setCreatedAt(LocalDateTime.now());
+        adUnit.setUpdatedAt(LocalDateTime.now());
         adUnit.setPosition(adUnitRequest.getPosition());
         adUnit.setSize(adUnitRequest.getSize());
         
@@ -95,6 +102,7 @@ public class AdUnitServiceImpl implements AdUnitService {
         adUnit.setRefreshInterval(adUnitRequest.getRefreshInterval());
         adUnit.setPosition(adUnitRequest.getPosition());
         adUnit.setSize(adUnitRequest.getSize());
+        adUnit.setUpdatedAt(LocalDateTime.now());
         
         return adUnitRepository.save(adUnit);
     }
@@ -121,6 +129,14 @@ public class AdUnitServiceImpl implements AdUnitService {
     @Override
     public List<AdUnit> getAdUnitsByType(String type) {
         return adUnitRepository.findByType(type);
+    }
+
+    @Override
+    public List<AdUnit> getAdUnitsByIds(List<String> ids) {
+        Iterable<AdUnit> adUnitsIterable = adUnitRepository.findAllById(ids);
+        List<AdUnit> adUnitList = new ArrayList<AdUnit>();
+        adUnitsIterable.forEach(adUnitList::add);
+        return adUnitList;
     }
 
     @Override

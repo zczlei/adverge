@@ -31,6 +31,15 @@ public interface EventService {
     void logBidEvent(String appId, String adUnitId, String platform, double price);
     
     /**
+     * 记录广告竞价胜出事件
+     * @param appId 应用ID
+     * @param adUnitId 广告单元ID
+     * @param platform 平台
+     * @param price 价格
+     */
+    void logWinEvent(String appId, String adUnitId, String platform, Double price);
+    
+    /**
      * 记录广告展示事件
      * @param appId 应用ID
      * @param adUnitId 广告单元ID

@@ -223,9 +223,15 @@ public class AppAdminController {
             RedirectAttributes redirectAttributes) {
         
         try {
-            App app = appService.regenerateApiKey(id);
-            redirectAttributes.addFlashAttribute("success", "应用 '" + app.getName() + "' 的API密钥已重新生成");
-            return "redirect:/admin/apps/view/" + id;
+            return appService.regenerateApiKey(id)
+                    .map(app -> {
+                        redirectAttributes.addFlashAttribute("success", "应用 '" + app.getName() + "' 的API密钥已重新生成");
+                        return "redirect:/admin/apps/view/" + id;
+                    })
+                    .orElseGet(() -> {
+                        redirectAttributes.addFlashAttribute("error", "未找到ID为 " + id + " 的应用");
+                        return "redirect:/admin/apps";
+                    });
         } catch (Exception e) {
             log.error("重新生成API密钥失败", e);
             redirectAttributes.addFlashAttribute("error", "重新生成API密钥失败: " + e.getMessage());

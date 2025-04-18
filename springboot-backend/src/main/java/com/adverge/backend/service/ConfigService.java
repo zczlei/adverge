@@ -10,7 +10,27 @@ import java.util.List;
 public interface ConfigService {
     
     /**
+     * 根据ID获取配置
+     * @param id 配置ID
+     * @return 配置对象
+     */
+    Config getConfigById(String id);
+    
+    /**
+     * 根据应用ID获取配置
+     * @param appId 应用ID
+     * @return 配置对象
+     */
+    Config getConfigByAppId(String appId);
+    
+    /**
      * 获取所有配置
+     * @return 配置列表
+     */
+    List<Config> getAllConfigs();
+    
+    /**
+     * 获取默认配置
      * @return 配置对象
      */
     Config getConfig();

@@ -1,11 +1,15 @@
 package com.adverge.sdk.ad;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.ViewGroup;
 
 import com.adverge.sdk.AdSDK;
+import com.adverge.sdk.adapter.AdPlatformAdapter;
+import com.adverge.sdk.adapter.AdPlatformManager;
 import com.adverge.sdk.listener.AdListener;
 import com.adverge.sdk.model.AdRequest;
+import com.adverge.sdk.model.AdResponse;
 import com.adverge.sdk.model.BidResponse;
 import com.adverge.sdk.network.AdServerCallback;
 import com.adverge.sdk.network.AdServerClient;
@@ -23,7 +27,8 @@ public abstract class AdView extends ViewGroup {
     protected final AdSDK sdk;
     protected final String adUnitId;
     protected AdListener listener;
-    protected BidResponse bidResponse;
+    protected AdResponse adResponse;
+    protected AdPlatformAdapter currentAdapter;
     protected boolean isLoaded;
     protected boolean isShowing;
     
@@ -62,15 +67,15 @@ public abstract class AdView extends ViewGroup {
         // 创建广告请求
         AdRequest request = createAdRequest();
         
-        // 直接调用后端API获取竞价结果
-        AdServerClient.getInstance(context).requestBid(request, new AdServerCallback() {
+        // 调用后端API获取竞价结果
+        AdServerClient.getInstance(context).requestAd(request, new AdServerCallback() {
             @Override
-            public void onBidResponse(BidResponse response) {
-                Logger.d(TAG, "收到竞价响应: " + response.getPlatform());
-                bidResponse = response;
+            public void onSuccess(AdResponse response) {
+                Logger.d(TAG, "收到广告响应: platform=" + response.getPlatform() + ", adId=" + response.getAdId());
+                adResponse = response;
                 
                 // 使用对应平台的适配器加载广告
-                loadAdWithAdapter(response.getPlatform(), response);
+                loadAdWithAdapter(response.getPlatform(), response.getAdId(), response);
             }
             
             @Override
@@ -84,12 +89,110 @@ public abstract class AdView extends ViewGroup {
     /**
      * 使用指定平台的适配器加载广告
      */
-    protected abstract void loadAdWithAdapter(String platform, BidResponse response);
+    protected void loadAdWithAdapter(String platform, String adId, AdResponse response) {
+        Logger.d(TAG, "使用适配器加载广告: platform=" + platform + ", adId=" + adId);
+        
+        try {
+            // 通过平台名称获取对应的适配器
+            currentAdapter = AdPlatformManager.getInstance(context).getAdapter(platform);
+            
+            if (currentAdapter == null) {
+                onAdFailedToLoad("未找到平台适配器: " + platform);
+                return;
+            }
+            
+            // 设置监听器
+            AdListener adapterListener = new AdListener() {
+                @Override
+                public void onAdLoaded() {
+                    isLoaded = true;
+                    if (listener != null) {
+                        listener.onAdLoaded();
+                    }
+                }
+                
+                @Override
+                public void onAdFailedToLoad(String errorMessage) {
+                    Logger.e(TAG, "适配器加载广告失败: " + errorMessage);
+                    isLoaded = false;
+                    if (listener != null) {
+                        listener.onAdFailedToLoad(errorMessage);
+                    }
+                }
+                
+                @Override
+                public void onAdClicked() {
+                    if (listener != null) {
+                        listener.onAdClicked();
+                    }
+                    
+                    // 记录点击事件
+                    AdServerClient.getInstance(context).trackClick(adUnitId, platform);
+                }
+                
+                @Override
+                public void onAdImpression() {
+                    if (listener != null) {
+                        listener.onAdImpression();
+                    }
+                    
+                    // 记录展示事件
+                    AdServerClient.getInstance(context).trackImpression(adUnitId, platform);
+                }
+                
+                @Override
+                public void onAdOpened() {
+                    isShowing = true;
+                    if (listener != null) {
+                        listener.onAdOpened();
+                    }
+                }
+                
+                @Override
+                public void onAdClosed() {
+                    isShowing = false;
+                    if (listener != null) {
+                        listener.onAdClosed();
+                    }
+                }
+                
+                @Override
+                public void onAdRewarded() {
+                    if (listener != null) {
+                        listener.onAdRewarded();
+                    }
+                }
+            };
+            
+            // 加载广告
+            currentAdapter.loadAd(adId, adapterListener);
+            
+        } catch (Exception e) {
+            Logger.e(TAG, "加载广告异常: " + e.getMessage());
+            onAdFailedToLoad("加载广告异常: " + e.getMessage());
+        }
+    }
     
     /**
      * 显示广告
      */
-    public abstract void show();
+    public void show() {
+        if (!isLoaded) {
+            Logger.e(TAG, "广告未加载或加载失败，无法显示");
+            return;
+        }
+        
+        if (currentAdapter != null) {
+            try {
+                currentAdapter.showAd();
+            } catch (Exception e) {
+                Logger.e(TAG, "显示广告失败: " + e.getMessage());
+                if (listener != null) {
+                    listener.onAdFailedToShow("显示广告失败: " + e.getMessage());
+                }
+            }
+        }
+    }
     
     /**
      * 创建广告请求
@@ -155,12 +258,12 @@ public abstract class AdView extends ViewGroup {
     protected abstract AdRequest.AdType getAdType();
     
     /**
-     * 广告加载失败处理
+     * 广告加载失败回调
      */
-    protected void onAdFailedToLoad(String error) {
-        Logger.e(TAG, "广告加载失败: " + error);
+    protected void onAdFailedToLoad(String errorMessage) {
+        isLoaded = false;
         if (listener != null) {
-            listener.onAdLoadFailed(adUnitId, error);
+            listener.onAdFailedToLoad(errorMessage);
         }
     }
     
@@ -225,11 +328,13 @@ public abstract class AdView extends ViewGroup {
      * 销毁广告
      */
     public void destroy() {
-        // 注销生命周期监控
-        AdLifecycleMonitor.getInstance(context).unregisterAdView(this);
+        if (currentAdapter != null) {
+            currentAdapter.destroy();
+            currentAdapter = null;
+        }
         
-        // 清理资源
-        listener = null;
-        bidResponse = null;
+        isLoaded = false;
+        isShowing = false;
+        AdLifecycleMonitor.getInstance(context).unregisterAdView(this);
     }
 } 

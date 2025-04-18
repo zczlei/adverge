@@ -67,6 +67,7 @@ public class AdEventDto {
     public enum EventType {
         REQUEST, // 请求广告
         BID,     // 竞价结果
+        WIN,     // 竞价胜出
         IMPRESSION, // 广告展示
         CLICK,   // 广告点击
         CLOSE,   // 广告关闭

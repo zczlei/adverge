@@ -1,49 +1,81 @@
 package com.adverge.backend.model;
 
 import lombok.Data;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.CompoundIndex;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Column;
+import javax.persistence.JoinColumn;
+import javax.persistence.ForeignKey;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 广告位实体类
+ * 广告单元实体类
  */
 @Data
-@Document(collection = "adUnits")
-@CompoundIndex(name = "app_name", def = "{'appId': 1, 'name': 1}", unique = true)
+@Entity
 public class AdUnit {
     
     @Id
     private String id;
     
+    /**
+     * 广告单元名称
+     */
+    @Column(nullable = false)
     private String name;
     
-    @Indexed
+    /**
+     * 关联的应用ID
+     */
+    @Column(nullable = false)
     private String appId;
     
-    private String type; // banner, interstitial, rewarded, native
+    /**
+     * 广告类型（横幅、插屏、激励视频等）
+     */
+    @Column(nullable = false)
+    private String type;
     
+    /**
+     * 广告单元说明
+     */
     private String description;
     
+    /**
+     * 是否启用
+     */
     private boolean active = true;
     
+    /**
+     * 最低出价
+     */
     private BigDecimal floorPrice;
     
+    /**
+     * 刷新间隔（秒）
+     */
     private Integer refreshInterval;
     
+    /**
+     * 广告位位置
+     */
     private String position;
     
+    /**
+     * 广告尺寸
+     */
     private String size;
     
-    @CreatedDate
+    /**
+     * 创建时间
+     */
     private LocalDateTime createdAt;
     
-    @LastModifiedDate
+    /**
+     * 更新时间
+     */
     private LocalDateTime updatedAt;
 } 

@@ -1,5 +1,6 @@
 package com.adverge.backend.service;
 
+import com.adverge.backend.dto.AppRequest;
 import com.adverge.backend.model.App;
 
 import java.util.List;
@@ -105,4 +106,36 @@ public interface AppService {
      * @return 更新后的应用（可能为空）
      */
     Optional<App> regenerateApiKey(String id);
+    
+    /**
+     * 创建新应用
+     * 
+     * @param appRequest 应用请求
+     * @return 创建的应用
+     */
+    App createApp(AppRequest appRequest);
+    
+    /**
+     * 更新应用
+     * 
+     * @param id 应用ID
+     * @param appRequest 应用请求
+     * @return 更新后的应用
+     */
+    App updateApp(String id, AppRequest appRequest);
+    
+    /**
+     * 获取平台上的应用
+     * 
+     * @param platform 平台
+     * @return 应用列表
+     */
+    List<App> getAppsByPlatform(String platform);
+    
+    /**
+     * 获取活跃应用
+     * 
+     * @return 活跃应用列表
+     */
+    List<App> getActiveApps();
 } 

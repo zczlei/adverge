@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
+
 /**
  * 广告响应对象
  * 用于与Android SDK通信
@@ -59,6 +62,9 @@ public class AdResponse {
      */
     private String platformParams;
 
+    // 添加静态ObjectMapper用于转换
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+
     /**
      * 从BidResponse创建AdResponse
      */
@@ -69,6 +75,17 @@ public class AdResponse {
         
         long expiryTime = System.currentTimeMillis() + 5 * 60 * 1000; // 5分钟后过期
         
+        // 将Map<String, Object>转换为JSON字符串
+        String platformParamsStr = "";
+        try {
+            if (bidResponse.getPlatformParams() != null) {
+                platformParamsStr = objectMapper.writeValueAsString(bidResponse.getPlatformParams());
+            }
+        } catch (Exception e) {
+            // 转换异常处理
+            platformParamsStr = "{}";
+        }
+        
         return AdResponse.builder()
                 .platform(bidResponse.getSource())
                 .adId(bidResponse.getAdId())
@@ -77,7 +94,7 @@ public class AdResponse {
                 .currency(bidResponse.getCurrency())
                 .expiry(expiryTime)
                 .bidToken(bidResponse.getBidToken())
-                .platformParams(bidResponse.getPlatformParams())
+                .platformParams(platformParamsStr)
                 .build();
     }
 } 

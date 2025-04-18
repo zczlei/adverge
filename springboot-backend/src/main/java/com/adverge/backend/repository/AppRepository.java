@@ -1,7 +1,7 @@
 package com.adverge.backend.repository;
 
 import com.adverge.backend.model.App;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -11,7 +11,7 @@ import java.util.Optional;
  * 应用存储库接口
  */
 @Repository
-public interface AppRepository extends MongoRepository<App, String> {
+public interface AppRepository extends JpaRepository<App, String> {
     
     /**
      * 根据应用名称查询应用
@@ -51,4 +51,12 @@ public interface AppRepository extends MongoRepository<App, String> {
      * @return 应用列表
      */
     List<App> findByAdUnitIdsContaining(String adUnitId);
+    
+    /**
+     * 根据平台查询应用
+     *
+     * @param platform 平台名称
+     * @return 应用列表
+     */
+    List<App> findByPlatform(String platform);
 } 

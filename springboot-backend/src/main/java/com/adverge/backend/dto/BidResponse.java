@@ -5,6 +5,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.util.Map;
+
 /**
  * 竞价响应类
  */
@@ -24,19 +27,9 @@ public class BidResponse {
     private String adId;
     
     /**
-     * 竞价价格
+     * 广告位ID
      */
-    private double price;
-    
-    /**
-     * 货币类型（默认USD）
-     */
-    private String currency = "USD";
-    
-    /**
-     * 竞价标识（Token）
-     */
-    private String bidToken;
+    private String placementId;
     
     /**
      * 广告内容
@@ -44,32 +37,63 @@ public class BidResponse {
     private String adContent;
     
     /**
-     * 广告素材URL
+     * 竞价价格
      */
-    private String creativeUrl;
+    private Double price;
     
     /**
-     * 广告点击URL
+     * 货币类型（默认USD）
      */
-    private String clickUrl;
+    private String currency;
     
     /**
-     * 广告曝光URL
+     * 竞价标识（Token）
      */
-    private String impressionUrl;
+    private String bidToken;
     
     /**
      * 平台特定参数（JSON字符串）
      */
-    private String platformParams;
+    private Map<String, Object> platformParams;
     
     /**
-     * 广告加载超时（毫秒）
+     * 广告数据
      */
-    private int loadTimeout = 30000;
+    private AdData adData;
     
     /**
-     * 广告预热时间（毫秒）
+     * 错误码
      */
-    private int warmupTime = 0;
+    private String errorCode;
+    
+    /**
+     * 错误消息
+     */
+    private String errorMessage;
+    
+    /**
+     * 是否成功
+     */
+    private boolean success;
+    
+    /**
+     * 嵌套的广告数据类
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AdData {
+        private String adId;
+        private String title;
+        private String description;
+        private String imageUrl;
+        private String iconUrl;
+        private String ctaText;
+        private String landingUrl;
+        private String clickUrl;
+        private String impressionUrl;
+        private Map<String, String> trackingUrls;
+        private Map<String, Object> metadata;
+    }
 } 

@@ -2,9 +2,12 @@ package com.adverge.backend.model;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
-
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.ElementCollection;
+import javax.persistence.Column;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +18,7 @@ import java.util.UUID;
  */
 @Data
 @NoArgsConstructor
-@Document(collection = "apps")
+@Entity
 public class App {
     
     @Id
@@ -24,16 +27,19 @@ public class App {
     /**
      * 应用名称
      */
+    @Column(nullable = false)
     private String name;
     
     /**
      * 应用包名/Bundle ID
      */
+    @Column(unique = true)
     private String packageName;
     
     /**
      * 应用描述
      */
+    @Column(length = 1000)
     private String description;
     
     /**
@@ -44,11 +50,13 @@ public class App {
     /**
      * 应用API密钥
      */
+    @Column(unique = true)
     private String apiKey;
     
     /**
      * 应用关联的广告单元列表
      */
+    @ElementCollection
     private List<String> adUnitIds = new ArrayList<>();
     
     /**

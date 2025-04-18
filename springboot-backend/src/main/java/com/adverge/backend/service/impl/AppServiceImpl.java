@@ -147,4 +147,63 @@ public class AppServiceImpl implements AppService {
     private String generateApiKey() {
         return UUID.randomUUID().toString().replace("-", "");
     }
+    
+    @Override
+    public App createApp(com.adverge.backend.dto.AppRequest appRequest) {
+        // 检查包名是否已存在
+        if (appRepository.findByPackageName(appRequest.getPackageName()).isPresent()) {
+            throw new IllegalArgumentException("包名已存在: " + appRequest.getPackageName());
+        }
+        
+        App app = new App();
+        app.setId(UUID.randomUUID().toString());
+        app.setName(appRequest.getName());
+        app.setPackageName(appRequest.getPackageName());
+        app.setPlatform(appRequest.getPlatform());
+        app.setDescription(appRequest.getDescription());
+        app.setEnabled(appRequest.isActive());
+        app.setCreatedAt(LocalDateTime.now());
+        app.setUpdatedAt(LocalDateTime.now());
+        
+        // 生成API密钥
+        app.generateApiKey();
+        
+        return appRepository.save(app);
+    }
+    
+    @Override
+    public App updateApp(String id, com.adverge.backend.dto.AppRequest appRequest) {
+        logger.debug("更新应用 {}: {}", id, appRequest.getName());
+        
+        return getAppById(id).map(app -> {
+            app.setName(appRequest.getName());
+            app.setPackageName(appRequest.getPackageName());
+            app.setDescription(appRequest.getDescription());
+            app.setPlatform(appRequest.getPlatform());
+            
+            return saveApp(app);
+        }).orElseThrow(() -> new IllegalArgumentException("未找到ID为 " + id + " 的应用"));
+    }
+    
+    @Override
+    public List<App> getAppsByPlatform(String platform) {
+        logger.debug("获取平台 {} 的应用", platform);
+        // 使用现有方法查询平台相关应用
+        List<App> allApps = getAllApps();
+        return allApps.stream()
+                .filter(app -> platform.equals(app.getPlatform()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+    
+    @Override
+    public List<App> getActiveApps() {
+        logger.debug("获取活跃应用");
+        
+        // 获取所有启用的应用，可以基于更多条件进行筛选，例如活跃度、最近使用时间等
+        List<App> enabledApps = getAllEnabledApps();
+        
+        // 在这里可以添加额外的筛选逻辑，例如基于性能指标、收入等
+        
+        return enabledApps;
+    }
 } 

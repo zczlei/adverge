@@ -1,0 +1,72 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  main:
+    allow-circular-references: true
+    allow-bean-definition-overriding: true
+  application:
+    name: adverge-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/adverge?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password: zxjk666
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+    properties:
+      hibernate:
+        enable_lazy_load_no_trans: true
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/adplatform}
+      auto-index-creation: false
+    jpa:
+      repositories:
+        enabled: true
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    password: ${REDIS_PASSWORD:}
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+  jackson:
+    default-property-inclusion: non_null
+    serialization:
+      FAIL_ON_EMPTY_BEANS: false
+      WRITE_DATES_AS_TIMESTAMPS: false
+    deserialization:
+      FAIL_ON_UNKNOWN_PROPERTIES: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+ad:
+  bid:
+    timeout: 5000
+    cache-expiry: 300
+  security:
+    jwt:
+      secret: ${JWT_SECRET:S3cre7K3y!F0rAdv3rg3}
+      expiration: ${JWT_EXPIRATION:86400000}
+  cors:
+    allowed-origins: "*"
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    exposed-headers: X-Timestamp,X-Signature
+
+logging:
+  level:
+    root: INFO
+    com.adverge: DEBUG
+    org.springframework.data.mongodb: INFO
+    org.springframework.data.redis: INFO
+    org.springframework.web: INFO 

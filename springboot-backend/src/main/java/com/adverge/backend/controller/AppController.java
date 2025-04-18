@@ -34,8 +34,9 @@ public class AppController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<App> getAppById(@PathVariable String id) {
-        App app = appService.getAppById(id);
-        return ResponseEntity.ok(app);
+        return appService.getAppById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     /**
