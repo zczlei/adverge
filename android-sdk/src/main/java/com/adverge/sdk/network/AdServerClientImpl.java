@@ -68,7 +68,7 @@ public class AdServerClientImpl implements AdServerClient {
     public void requestAd(AdRequest request, final AdServerCallback callback) {
         try {
             // 构建请求URL
-            String url = baseUrl + "/api/v1/ad";
+            String url = baseUrl + "/v1/ad";
             
             // 构建请求体
             JSONObject jsonBody = new JSONObject();
@@ -149,7 +149,7 @@ public class AdServerClientImpl implements AdServerClient {
     public void trackImpression(String adUnitId, String platform) {
         try {
             // 构建请求URL
-            String url = baseUrl + "/api/v1/track/impression?adUnitId=" + adUnitId + "&platform=" + platform;
+            String url = baseUrl + "/v1/track/impression?adUnitId=" + adUnitId + "&platform=" + platform;
             
             // 构建请求
             Request request = new Request.Builder()
@@ -181,7 +181,7 @@ public class AdServerClientImpl implements AdServerClient {
     public void trackClick(String adUnitId, String platform) {
         try {
             // 构建请求URL
-            String url = baseUrl + "/api/v1/track/click?adUnitId=" + adUnitId + "&platform=" + platform;
+            String url = baseUrl + "/v1/track/click?adUnitId=" + adUnitId + "&platform=" + platform;
             
             // 构建请求
             Request request = new Request.Builder()
@@ -213,7 +213,7 @@ public class AdServerClientImpl implements AdServerClient {
     public void getPlatforms(final PlatformCallback callback) {
         try {
             // 构建请求URL
-            String url = baseUrl + "/api/v1/platforms";
+            String url = baseUrl + "/v1/platforms";
             
             // 构建请求
             Request request = new Request.Builder()
