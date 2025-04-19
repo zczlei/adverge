@@ -14,7 +14,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/ad-units")
+@RequestMapping("/ad-units")
 @RequiredArgsConstructor
 public class AdUnitController {
 

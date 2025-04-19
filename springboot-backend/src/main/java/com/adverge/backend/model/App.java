@@ -8,6 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.ElementCollection;
 import javax.persistence.Column;
+import javax.persistence.FetchType;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +57,7 @@ public class App {
     /**
      * 应用关联的广告单元列表
      */
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     private List<String> adUnitIds = new ArrayList<>();
     
     /**

@@ -17,7 +17,7 @@ import java.util.List;
  */
 @Slf4j
 @Controller
-@RequestMapping("/admin/platforms")
+@RequestMapping("/admin/platforms-view")
 @RequiredArgsConstructor
 public class PlatformAdminController {
 
@@ -53,11 +53,11 @@ public class PlatformAdminController {
         try {
             configService.savePlatform(platform);
             redirectAttributes.addFlashAttribute("success", "平台创建成功");
-            return "redirect:/admin/platforms";
+            return "redirect:/admin/platforms-view";
         } catch (Exception e) {
             log.error("创建平台失败", e);
             redirectAttributes.addFlashAttribute("error", "平台创建失败: " + e.getMessage());
-            return "redirect:/admin/platforms/create";
+            return "redirect:/admin/platforms-view/create";
         }
     }
 
@@ -73,7 +73,7 @@ public class PlatformAdminController {
         Config.Platform platform = configService.getPlatform(name);
         if (platform == null) {
             redirectAttributes.addFlashAttribute("error", "平台不存在");
-            return "redirect:/admin/platforms";
+            return "redirect:/admin/platforms-view";
         }
         
         model.addAttribute("platform", platform);
@@ -95,11 +95,11 @@ public class PlatformAdminController {
             
             configService.savePlatform(platform);
             redirectAttributes.addFlashAttribute("success", "平台更新成功");
-            return "redirect:/admin/platforms";
+            return "redirect:/admin/platforms-view";
         } catch (Exception e) {
             log.error("更新平台失败", e);
             redirectAttributes.addFlashAttribute("error", "平台更新失败: " + e.getMessage());
-            return "redirect:/admin/platforms/edit/" + name;
+            return "redirect:/admin/platforms-view/edit/" + name;
         }
     }
 
@@ -119,7 +119,7 @@ public class PlatformAdminController {
             redirectAttributes.addFlashAttribute("error", "启用平台失败: " + e.getMessage());
         }
         
-        return "redirect:/admin/platforms";
+        return "redirect:/admin/platforms-view";
     }
 
     /**
@@ -138,7 +138,7 @@ public class PlatformAdminController {
             redirectAttributes.addFlashAttribute("error", "禁用平台失败: " + e.getMessage());
         }
         
-        return "redirect:/admin/platforms";
+        return "redirect:/admin/platforms-view";
     }
 
     /**
@@ -162,6 +162,6 @@ public class PlatformAdminController {
             redirectAttributes.addFlashAttribute("error", "删除平台失败: " + e.getMessage());
         }
         
-        return "redirect:/admin/platforms";
+        return "redirect:/admin/platforms-view";
     }
 } 

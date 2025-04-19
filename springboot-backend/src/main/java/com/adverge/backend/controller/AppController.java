@@ -14,7 +14,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/apps")
+@RequestMapping("/apps")
 @RequiredArgsConstructor
 public class AppController {
 
