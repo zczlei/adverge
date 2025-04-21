@@ -1,10 +1,19 @@
-plugins {
-    id 'com.android.library'
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.1.0'
+    }
 }
+
+apply plugin: 'com.android.library'
 
 android {
     namespace 'com.adverge.sdk'
     compileSdk 34
+    buildToolsVersion "34.0.0"
 
     defaultConfig {
         minSdk 21
@@ -27,63 +36,33 @@ android {
     }
 }
 
+repositories {
+    google()
+    mavenCentral()
+    maven { url 'https://maven.google.com' }  // Unity Ads
+}
+
 dependencies {
+    implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
-    implementation 'org.json:json:20231013'
     
-    // 图片加载库
+    // 网络请求
+    implementation 'com.squareup.retrofit2:retrofit:2.9.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.9.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:4.12.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    
+    // 图片加载
     implementation 'com.github.bumptech.glide:glide:4.16.0'
-    annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     
-    // IronSource SDK
-    implementation 'com.ironsource.sdk:mediationsdk:7.5.1'
+    // 广告平台 SDK
+    implementation 'com.google.android.gms:play-services-ads:22.6.0'  // Google AdMob
+
+    implementation 'com.unity3d.ads:unity-ads:4.9.1'  // Unity Ads
     
-    // Bigo Ads SDK
-    implementation 'com.bigo.sdk:ads:1.0.0'
-    
-    // InMobi SDK
-    implementation 'com.inmobi.monetization:inmobi-ads:10.1.2'
-    
-    // TopOn SDK
-    implementation 'com.anythink.sdk:core:6.2.45'
-    implementation 'com.anythink.sdk:nativead:6.2.45'
-    implementation 'com.anythink.sdk:banner:6.2.45'
-    implementation 'com.anythink.sdk:interstitial:6.2.45'
-    implementation 'com.anythink.sdk:rewardedvideo:6.2.45'
-    
-    // Vungle SDK
-    implementation 'com.vungle:publisher-sdk-android:6.12.1'
-    
-    // AdMob SDK
-    implementation 'com.google.android.gms:play-services-ads:22.6.0'
-    
-    // Facebook Audience Network SDK
-    implementation 'com.facebook.android:audience-network-sdk:6.16.0'
-    
-    // Chartboost SDK
-    implementation 'com.chartboost:chartboost-sdk:9.3.1'
-    
-    // Mintegral SDK
-    implementation 'com.mbridge.msdk.oversea:reward:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:newinterstitial:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:mbbanner:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:mbsplash:16.6.31'
-    implementation 'com.mbridge.msdk.oversea:mbbid:16.6.31'
-    
-    // Fyber SDK
-    implementation 'com.fyber:marketplace-sdk:8.2.4'
-    
-    // Unity Ads SDK
-    implementation 'com.unity3d.ads:unity-ads:4.9.1'
-    
-    // Mahimeta SDK
-    implementation 'com.mahimeta.sdk:core:1.0.0'
-    implementation 'com.mahimeta.sdk:rewarded:1.0.0'
-    implementation 'com.mahimeta.sdk:interstitial:1.0.0'
-    implementation 'com.mahimeta.sdk:banner:1.0.0'
-    
-    testImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    // Kotlin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3"
 } 
