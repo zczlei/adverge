@@ -39,6 +39,15 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 初始化视图
+        bannerContainer = findViewById(R.id.banner_container);
+        loadBannerButton = findViewById(R.id.load_banner_button);
+        loadInterstitialButton = findViewById(R.id.load_interstitial_button);
+        showInterstitialButton = findViewById(R.id.show_interstitial_button);
+        loadRewardedButton = findViewById(R.id.load_rewarded_button);
+        showRewardedButton = findViewById(R.id.show_rewarded_button);
+        statusTextView = findViewById(R.id.status_text);
+
         // 初始化AdSDK
         updateStatus(getString(R.string.status_init));
         AdSDK.initialize(this);
@@ -48,15 +57,6 @@ public class MainActivity extends AppCompatActivity {
         configs.put("admob", BuildConfig.APP_ID);
         AdSDK.getInstance().getPlatformManager().initAll(this, configs);
         updateStatus(getString(R.string.status_init_complete));
-
-        // 初始化视图
-        bannerContainer = findViewById(R.id.banner_container);
-        loadBannerButton = findViewById(R.id.load_banner_button);
-        loadInterstitialButton = findViewById(R.id.load_interstitial_button);
-        showInterstitialButton = findViewById(R.id.show_interstitial_button);
-        loadRewardedButton = findViewById(R.id.load_rewarded_button);
-        showRewardedButton = findViewById(R.id.show_rewarded_button);
-        statusTextView = findViewById(R.id.status_text);
 
         // 初始化广告实例
         initBannerAd();
@@ -70,120 +70,141 @@ public class MainActivity extends AppCompatActivity {
     private void initBannerAd() {
         bannerAd = new BannerAd(this);
         bannerAd.setAdUnitId(BuildConfig.BANNER_AD_UNIT_ID);
-        bannerAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() {
-                updateStatus("横幅广告加载成功");
-                bannerContainer.setVisibility(View.VISIBLE);
-            }
+        
+        // 先添加视图
+        bannerContainer.addView(bannerAd);
+        
+        // 延迟设置监听器
+        new Handler().post(() -> {
+            AdListener listener = new AdListener() {
+                @Override
+                public void onAdLoaded() {
+                    updateStatus("横幅广告加载成功");
+                    bannerContainer.setVisibility(View.VISIBLE);
+                }
 
-            @Override
-            public void onAdLoadFailed(String errorMessage) {
-                updateStatus("横幅广告加载失败: " + errorMessage);
-            }
+                @Override
+                public void onAdLoadFailed(String errorMessage) {
+                    updateStatus("横幅广告加载失败: " + errorMessage);
+                }
+                
+                @Override
+                public void onAdShown() {
+                    updateStatus("横幅广告显示");
+                }
+
+                @Override
+                public void onAdClicked() {
+                    updateStatus("横幅广告被点击");
+                }
+
+                @Override
+                public void onAdClosed() {
+                    updateStatus("横幅广告关闭");
+                }
+                
+                @Override
+                public void onRewarded(String type, int amount) {
+                    // 横幅广告不会有奖励
+                }
+            };
             
-            @Override
-            public void onAdShown() {
-                updateStatus("横幅广告显示");
-            }
-
-            @Override
-            public void onAdClicked() {
-                updateStatus("横幅广告被点击");
-            }
-
-            @Override
-            public void onAdClosed() {
-                updateStatus("横幅广告关闭");
-            }
-            
-            @Override
-            public void onRewarded(String type, int amount) {
-                // 横幅广告不会有奖励
-            }
+            bannerAd.setAdListener(listener);
         });
     }
 
     private void initInterstitialAd() {
         interstitialAd = new InterstitialAd(this);
         interstitialAd.setAdUnitId(BuildConfig.INTERSTITIAL_AD_UNIT_ID);
-        interstitialAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() {
-                updateStatus("插屏广告加载成功");
-                showInterstitialButton.setEnabled(true);
-            }
+        
+        // 延迟设置监听器
+        new Handler().post(() -> {
+            AdListener listener = new AdListener() {
+                @Override
+                public void onAdLoaded() {
+                    updateStatus("插屏广告加载成功");
+                    showInterstitialButton.setEnabled(true);
+                }
 
-            @Override
-            public void onAdLoadFailed(String errorMessage) {
-                updateStatus("插屏广告加载失败: " + errorMessage);
-                showInterstitialButton.setEnabled(false);
-            }
+                @Override
+                public void onAdLoadFailed(String errorMessage) {
+                    updateStatus("插屏广告加载失败: " + errorMessage);
+                    showInterstitialButton.setEnabled(false);
+                }
+                
+                @Override
+                public void onAdShown() {
+                    updateStatus("插屏广告显示");
+                }
+
+                @Override
+                public void onAdClicked() {
+                    updateStatus("插屏广告被点击");
+                }
+
+                @Override
+                public void onAdClosed() {
+                    updateStatus("插屏广告关闭");
+                    // 可以在这里自动预加载下一个广告
+                    loadInterstitialAd();
+                }
+                
+                @Override
+                public void onRewarded(String type, int amount) {
+                    // 插屏广告不会有奖励
+                }
+            };
             
-            @Override
-            public void onAdShown() {
-                updateStatus("插屏广告显示");
-            }
-
-            @Override
-            public void onAdClicked() {
-                updateStatus("插屏广告被点击");
-            }
-
-            @Override
-            public void onAdClosed() {
-                updateStatus("插屏广告关闭");
-                // 可以在这里自动预加载下一个广告
-                loadInterstitialAd();
-            }
-            
-            @Override
-            public void onRewarded(String type, int amount) {
-                // 插屏广告不会有奖励
-            }
+            interstitialAd.setAdListener(listener);
         });
     }
 
     private void initRewardedAd() {
         rewardedAd = new RewardedAd(this);
         rewardedAd.setAdUnitId(BuildConfig.REWARDED_AD_UNIT_ID);
-        rewardedAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() {
-                updateStatus("激励广告加载成功");
-                showRewardedButton.setEnabled(true);
-            }
+        
+        // 延迟设置监听器
+        new Handler().post(() -> {
+            AdListener listener = new AdListener() {
+                @Override
+                public void onAdLoaded() {
+                    updateStatus("激励广告加载成功");
+                    showRewardedButton.setEnabled(true);
+                }
 
-            @Override
-            public void onAdLoadFailed(String errorMessage) {
-                updateStatus("激励广告加载失败: " + errorMessage);
-                showRewardedButton.setEnabled(false);
-            }
-            
-            @Override
-            public void onAdShown() {
-                updateStatus("激励广告开始展示");
-            }
+                @Override
+                public void onAdLoadFailed(String errorMessage) {
+                    updateStatus("激励广告加载失败: " + errorMessage);
+                    showRewardedButton.setEnabled(false);
+                }
+                
+                @Override
+                public void onAdShown() {
+                    updateStatus("激励广告开始展示");
+                }
 
-            @Override
-            public void onAdClicked() {
-                updateStatus("激励广告被点击");
-            }
+                @Override
+                public void onAdClicked() {
+                    updateStatus("激励广告被点击");
+                }
 
-            @Override
-            public void onAdClosed() {
-                updateStatus("激励广告关闭");
-                // 可以在这里自动预加载下一个广告
-                loadRewardedAd();
-            }
-            
-            @Override
-            public void onRewarded(String type, int amount) {
-                updateStatus("获得奖励: " + amount + " " + type);
-                Toast.makeText(MainActivity.this, 
+                @Override
+                public void onAdClosed() {
+                    updateStatus("激励广告关闭");
+                    // 可以在这里自动预加载下一个广告
+                    loadRewardedAd();
+                }
+                
+                @Override
+                public void onRewarded(String type, int amount) {
+                    updateStatus("获得奖励: " + amount + " " + type);
+                    Toast.makeText(MainActivity.this, 
                                "恭喜获得 " + amount + " " + type + " 奖励!", 
                                Toast.LENGTH_LONG).show();
-            }
+                }
+            };
+            
+            rewardedAd.setAdListener(listener);
         });
     }
 
@@ -254,16 +275,34 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
-        // 清理资源
-        if (bannerAd != null) {
-            bannerAd.destroy();
-        }
-        if (interstitialAd != null) {
-            interstitialAd.destroy();
-        }
-        if (rewardedAd != null) {
-            rewardedAd.destroy();
+        try {
+            // 清理广告资源
+            if (bannerAd != null) {
+                bannerAd.destroy();
+                bannerAd = null;
+            }
+            if (interstitialAd != null) {
+                interstitialAd.destroy();
+                interstitialAd = null;
+            }
+            if (rewardedAd != null) {
+                rewardedAd.destroy();
+                rewardedAd = null;
+            }
+            
+            // 清理视图引用
+            bannerContainer = null;
+            loadBannerButton = null;
+            loadInterstitialButton = null;
+            showInterstitialButton = null;
+            loadRewardedButton = null;
+            showRewardedButton = null;
+            statusTextView = null;
+            
+            // 调用父类方法
+            super.onDestroy();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 } 
