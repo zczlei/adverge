@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AdVerge SDK Demo</string>
+    
+    <!-- 状态信息 -->
+    <string name="status_not_initialized">SDK尚未初始化</string>
+    <string name="status_initialized">SDK初始化成功</string>
+    <string name="status_init_failed">SDK初始化失败</string>
+    <string name="status_loading">正在加载广告…</string>
+    <string name="status_load_success">广告加载成功</string>
+    <string name="status_load_failed">广告加载失败: %1$s</string>
+    <string name="status_ad_shown">广告已展示</string>
+    <string name="status_ad_dismissed">广告已关闭</string>
+    <string name="status_reward_earned">获得奖励!</string>
+    
+    <!-- 广告类型标题 -->
+    <string name="banner_ad_section">横幅广告</string>
+    <string name="interstitial_ad_section">插屏广告</string>
+    <string name="rewarded_ad_section">激励广告</string>
+    
+    <!-- 按钮文本 -->
+    <string name="load_banner_ad">加载横幅广告</string>
+    <string name="load_interstitial_ad">加载插屏广告</string>
+    <string name="show_interstitial_ad">显示插屏广告</string>
+    <string name="load_rewarded_ad">加载激励广告</string>
+    <string name="show_rewarded_ad">显示激励广告</string>
+    
+    <!-- 状态消息 -->
+    <string name="loading_ad">正在加载%1$s…</string>
+    <string name="load_success">%1$s加载成功</string>
+    <string name="load_failed">%1$s加载失败: %2$s</string>
+    <string name="showing_ad">正在展示%1$s…</string>
+    <string name="show_success">%1$s展示成功</string>
+    <string name="show_failed">%1$s展示失败: %2$s</string>
+    <string name="reward_earned">获得奖励!</string>
+    
+    <string name="copyright">© 2023 AdVerge SDK 演示应用</string>
+    
+    <string name="ready">准备就绪</string>
+    <string name="banner_ad">横幅广告</string>
+    <string name="interstitial_ad">插屏广告</string>
+    <string name="rewarded_ad">激励广告</string>
+    <string name="loading">加载中...</string>
+    <string name="ad_clicked">广告被点击</string>
+    <string name="ad_impression">广告曝光</string>
+    <string name="ad_closed">广告关闭</string>
+    <string name="rewarded">获得奖励</string>
+    <string name="not_ready">广告未准备好</string>
+    
+    <!-- MainActivity使用的字符串 -->
+    <string name="status_init">正在初始化SDK...</string>
+    <string name="status_init_complete">SDK初始化完成</string>
+    <string name="status_loaded">广告加载成功</string>
+    <string name="status_showing">正在显示广告...</string>
+    <string name="status_closed">广告已关闭</string>
+    <string name="status_clicked">广告被点击</string>
+</resources> 

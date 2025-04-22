@@ -3,149 +3,46 @@ package com.adverge.sdk.utils;
 import android.os.Handler;
 import android.os.Looper;
 
-import com.adverge.sdk.ad.AdRequest;
-import com.adverge.sdk.ad.AdResponse;
+import com.adverge.sdk.model.AdRequest;
+import com.adverge.sdk.model.AdResponse;
 import com.adverge.sdk.listener.AdListener;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 广告请求重试管理器
+ * 重试管理器
+ * 用于处理广告请求失败时的重试逻辑
  */
 public class RetryManager {
     private static final String TAG = "RetryManager";
-    private static final int MAX_RETRY_COUNT = 3;
-    private static final long INITIAL_RETRY_DELAY = 1000; // 1秒
-    private static final long MAX_RETRY_DELAY = 10000; // 10秒
     
-    private static RetryManager instance;
-    private final ExecutorService executorService;
+    private final ScheduledExecutorService executorService;
     private final Handler mainHandler;
-    private final Map<String, RetryTask> retryTasks;
+    private final int maxRetries;
+    private final long initialDelay;
+    private final long maxDelay;
     
-    private RetryManager() {
-        this.executorService = Executors.newFixedThreadPool(3);
+    /**
+     * 构造函数
+     * @param maxRetries 最大重试次数
+     * @param initialDelay 初始延迟时间（毫秒）
+     * @param maxDelay 最大延迟时间（毫秒）
+     */
+    public RetryManager(int maxRetries, long initialDelay, long maxDelay) {
+        this.executorService = Executors.newScheduledThreadPool(1);
         this.mainHandler = new Handler(Looper.getMainLooper());
-        this.retryTasks = new HashMap<>();
-    }
-    
-    public static synchronized RetryManager getInstance() {
-        if (instance == null) {
-            instance = new RetryManager();
-        }
-        return instance;
+        this.maxRetries = maxRetries;
+        this.initialDelay = initialDelay;
+        this.maxDelay = maxDelay;
     }
     
     /**
-     * 执行带重试的广告请求
-     * @param request 广告请求
-     * @param listener 广告监听器
+     * 构造函数（使用默认参数）
      */
-    public void executeWithRetry(AdRequest request, AdListener listener) {
-        String adUnitId = request.getAdUnitId();
-        if (adUnitId == null || adUnitId.isEmpty()) {
-            Logger.e(TAG, "Invalid ad unit ID");
-            return;
-        }
-        
-        // 创建重试任务
-        RetryTask task = new RetryTask(request, listener);
-        retryTasks.put(adUnitId, task);
-        
-        // 执行任务
-        executorService.execute(task);
-    }
-    
-    /**
-     * 取消重试任务
-     * @param adUnitId 广告单元ID
-     */
-    public void cancelRetry(String adUnitId) {
-        RetryTask task = retryTasks.remove(adUnitId);
-        if (task != null) {
-            task.cancel();
-        }
-    }
-    
-    /**
-     * 重试任务类
-     */
-    private class RetryTask implements Runnable {
-        private final AdRequest request;
-        private final AdListener listener;
-        private int retryCount;
-        private long retryDelay;
-        private boolean isCancelled;
-        
-        RetryTask(AdRequest request, AdListener listener) {
-            this.request = request;
-            this.listener = listener;
-            this.retryCount = 0;
-            this.retryDelay = INITIAL_RETRY_DELAY;
-            this.isCancelled = false;
-        }
-        
-        @Override
-        public void run() {
-            if (isCancelled) {
-                return;
-            }
-            
-            try {
-                // 模拟广告请求
-                AdResponse response = simulateAdRequest(request);
-                
-                // 请求成功
-                mainHandler.post(() -> {
-                    if (listener != null) {
-                        listener.onAdLoaded(response);
-                    }
-                    retryTasks.remove(request.getAdUnitId());
-                });
-                
-            } catch (Exception e) {
-                Logger.e(TAG, "Ad request failed: " + request.getAdUnitId(), e);
-                
-                // 检查是否需要重试
-                if (retryCount < MAX_RETRY_COUNT && !isCancelled) {
-                    retryCount++;
-                    retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY);
-                    
-                    // 延迟后重试
-                    executorService.schedule(this, retryDelay, TimeUnit.MILLISECONDS);
-                    
-                } else {
-                    // 重试次数达到上限或任务被取消
-                    mainHandler.post(() -> {
-                        if (listener != null) {
-                            listener.onAdFailedToLoad(e.getMessage());
-                        }
-                        retryTasks.remove(request.getAdUnitId());
-                    });
-                }
-            }
-        }
-        
-        void cancel() {
-            isCancelled = true;
-        }
-    }
-    
-    /**
-     * 模拟广告请求
-     */
-    private AdResponse simulateAdRequest(AdRequest request) {
-        // TODO: 实现实际的广告请求逻辑
-        // 这里使用模拟数据
-        return new AdResponse.Builder()
-                .setAdUnitId(request.getAdUnitId())
-                .setAdType(request.getAdType())
-                .setAdContent("Mock ad content")
-                .build();
+    public RetryManager() {
+        this(3, 1000, 10000); // 默认最多重试3次，初始延迟1秒，最大延迟10秒
     }
     
     /**
@@ -153,7 +50,110 @@ public class RetryManager {
      */
     public void destroy() {
         executorService.shutdown();
-        retryTasks.clear();
-        instance = null;
+    }
+    
+    /**
+     * 执行带重试的任务
+     * @param task 任务
+     */
+    public void executeWithRetry(Runnable task) {
+        executeWithRetry(task, 0);
+    }
+    
+    /**
+     * 使用指定的重试次数执行任务
+     * @param task 任务
+     * @param retryCount 当前重试次数
+     */
+    private void executeWithRetry(Runnable task, int retryCount) {
+        try {
+            task.run();
+        } catch (Exception e) {
+            Logger.e(TAG, "Task execution failed: " + e.getMessage());
+            if (retryCount < maxRetries) {
+                long retryDelay = calculateRetryDelay(retryCount);
+                Logger.d(TAG, "Retrying in " + retryDelay + "ms. Retry: " + (retryCount + 1) + "/" + maxRetries);
+                
+                executorService.schedule(() -> {
+                    mainHandler.post(() -> executeWithRetry(task, retryCount + 1));
+                }, retryDelay, TimeUnit.MILLISECONDS);
+            }
+        }
+    }
+    
+    /**
+     * 计算重试延迟
+     * @param retryCount 重试次数
+     * @return 延迟时间
+     */
+    private long calculateRetryDelay(int retryCount) {
+        // 指数退避算法: delay = initialDelay * 2^retryCount
+        long delay = initialDelay * (long) Math.pow(2, retryCount);
+        return Math.min(delay, maxDelay);
+    }
+    
+    /**
+     * 重试任务类
+     */
+    public class RetryTask implements Runnable {
+        private final AdRequest request;
+        private final AdListener listener;
+        private int retryCount = 0;
+        
+        public RetryTask(AdRequest request, AdListener listener) {
+            this.request = request;
+            this.listener = listener;
+        }
+        
+        @Override
+        public void run() {
+            try {
+                // 模拟请求广告
+                if (Math.random() > 0.7) { // 模拟30%的失败率
+                    // 请求成功
+                    AdResponse response = createMockResponse(request);
+                    mainHandler.post(() -> {
+                        if (listener != null) {
+                            listener.onAdLoaded(response);
+                        }
+                    });
+                } else {
+                    // 请求失败，进行重试
+                    if (retryCount < maxRetries) {
+                        retryCount++;
+                        long retryDelay = calculateRetryDelay(retryCount - 1);
+                        Logger.d(TAG, "Ad request failed. Retrying in " + retryDelay + "ms. Retry: " + retryCount + "/" + maxRetries);
+                        
+                        executorService.schedule(this, retryDelay, TimeUnit.MILLISECONDS);
+                    } else {
+                        // 超过最大重试次数
+                        String error = "Max retry attempts reached";
+                        mainHandler.post(() -> {
+                            if (listener != null) {
+                                listener.onAdLoadFailed(error);
+                            }
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                String errorMessage = e.getMessage();
+                mainHandler.post(() -> {
+                    if (listener != null) {
+                        listener.onAdLoadFailed(errorMessage);
+                    }
+                });
+            }
+        }
+        
+        private AdResponse createMockResponse(AdRequest request) {
+            // 创建模拟响应，用于测试
+            return new AdResponse.Builder()
+                .setId("mock_ad_id_" + System.currentTimeMillis())
+                .setAdUnitId(request.getAdUnitId())
+                .setPlatform("mock_platform")
+                .setCreativeType("mock_creative")
+                .setEcpm(1.5)
+                .build();
+        }
     }
 } 

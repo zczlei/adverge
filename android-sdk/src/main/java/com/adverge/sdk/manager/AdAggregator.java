@@ -2,10 +2,11 @@ package com.adverge.sdk.manager;
 
 import android.content.Context;
 import android.util.Log;
-import com.adverge.sdk.adapter.AdPlatformAdapter;
-import com.adverge.sdk.listener.AdListener;
 import com.adverge.sdk.model.AdRequest;
+import com.adverge.sdk.platform.AdPlatformAdapter;
 import com.adverge.sdk.model.AdResponse;
+import com.adverge.sdk.network.AdCallback;
+import com.adverge.sdk.listener.AdListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -20,18 +21,20 @@ import java.util.concurrent.Executors;
 public class AdAggregator {
     private static final String TAG = "AdAggregator";
     private static AdAggregator instance;
+    private final Context context;
     private final List<AdPlatformAdapter> adapters;
     private final ExecutorService executorService;
     private boolean isInitialized = false;
 
-    private AdAggregator() {
+    private AdAggregator(Context context) {
+        this.context = context;
         adapters = new ArrayList<>();
         executorService = Executors.newCachedThreadPool();
     }
 
-    public static synchronized AdAggregator getInstance() {
+    public static synchronized AdAggregator getInstance(Context context) {
         if (instance == null) {
-            instance = new AdAggregator();
+            instance = new AdAggregator(context);
         }
         return instance;
     }
@@ -144,7 +147,23 @@ public class AdAggregator {
     private void loadWinningAd(AdResponse bid, AdListener listener) {
         for (AdPlatformAdapter adapter : adapters) {
             if (adapter.getPlatformName().equals(bid.getPlatformName())) {
-                adapter.loadAd(bid.getAdUnitId(), listener);
+                AdRequest request = new AdRequest();
+                request.setAdUnitId(bid.getAdUnitId());
+                adapter.loadAd(request, new AdPlatformAdapter.AdCallback() {
+                    @Override
+                    public void onSuccess(AdResponse response) {
+                        if (listener != null) {
+                            listener.onAdLoaded(response);
+                        }
+                    }
+                    
+                    @Override
+                    public void onError(String error) {
+                        if (listener != null) {
+                            listener.onAdLoadFailed(error);
+                        }
+                    }
+                });
                 return;
             }
         }
@@ -177,5 +196,32 @@ public class AdAggregator {
         adapters.clear();
         executorService.shutdown();
         isInitialized = false;
+    }
+
+    public void preloadAd(String adUnitId, AdCallback listener) {
+        AdRequest request = new AdRequest();
+        request.setAdUnitId(adUnitId);
+        
+        for (AdPlatformAdapter adapter : adapters) {
+            AdResponse bid = adapter.getBid(request);
+            if (bid != null) {
+                adapter.loadAd(request, new AdPlatformAdapter.AdCallback() {
+                    @Override
+                    public void onSuccess(AdResponse response) {
+                        if (listener != null) {
+                            listener.onSuccess(response);
+                        }
+                    }
+                    
+                    @Override
+                    public void onError(String error) {
+                        if (listener != null) {
+                            listener.onError(error);
+                        }
+                    }
+                });
+                break;
+            }
+        }
     }
 } 

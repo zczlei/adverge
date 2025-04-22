@@ -3,85 +3,97 @@ package com.adverge.sdk.utils;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
 import com.adverge.sdk.AdSDK;
-import com.adverge.sdk.ad.AdView;
+import com.adverge.sdk.view.AdView;
 import com.adverge.sdk.listener.AdListener;
+import com.adverge.sdk.model.AdResponse;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 广告生命周期监控器
+ * 用于监控和管理广告的整个生命周期
  */
 public class AdLifecycleMonitor {
     private static final String TAG = "AdLifecycleMonitor";
     private static final long MONITOR_INTERVAL = 30 * 1000; // 30秒
     private static final long AD_EXPIRY_TIME = 30 * 60 * 1000; // 30分钟
     
-    private static AdLifecycleMonitor instance;
-    private final Context context;
+    private static Map<Context, AdLifecycleMonitor> instances = new HashMap<>();
+    
+    private WeakHashMap<AdView, AdListener> registeredAdViews = new WeakHashMap<>();
+    private Context context;
     private final Handler monitorHandler;
-    private final Map<String, AdView> activeAds;
     private final Map<String, Long> impressionTimestamps;
     private final Map<String, Integer> impressionCounts;
     private final Map<String, Integer> clickCounts;
-    private final Map<String, AdListener> adListeners;
     
     private AdLifecycleMonitor(Context context) {
         this.context = context.getApplicationContext();
         this.monitorHandler = new Handler(Looper.getMainLooper());
-        this.activeAds = new HashMap<>();
         this.impressionTimestamps = new HashMap<>();
         this.impressionCounts = new HashMap<>();
         this.clickCounts = new HashMap<>();
-        this.adListeners = new HashMap<>();
         
         startMonitoring();
     }
     
-    public static AdLifecycleMonitor getInstance(Context context) {
-        if (instance == null) {
-            synchronized (AdLifecycleMonitor.class) {
-                if (instance == null) {
-                    instance = new AdLifecycleMonitor(context);
-                }
-            }
+    /**
+     * 获取实例
+     */
+    public static synchronized AdLifecycleMonitor getInstance(Context context) {
+        if (context == null) {
+            throw new IllegalArgumentException("Context cannot be null");
         }
+        
+        Context appContext = context.getApplicationContext();
+        AdLifecycleMonitor instance = instances.get(appContext);
+        
+        if (instance == null) {
+            instance = new AdLifecycleMonitor(appContext);
+            instances.put(appContext, instance);
+        }
+        
         return instance;
     }
     
     /**
      * 注册广告视图
-     * @param adView 广告视图
-     * @param listener 广告监听器
      */
     public void registerAdView(AdView adView, AdListener listener) {
-        String adUnitId = adView.getAdUnitId();
-        activeAds.put(adUnitId, adView);
-        adListeners.put(adUnitId, listener);
+        if (adView == null) {
+            Log.e(TAG, "Cannot register null AdView");
+            return;
+        }
+        
+        registeredAdViews.put(adView, listener);
+        Log.d(TAG, "Registered AdView: " + adView);
         
         // 设置广告监听器
         adView.setAdListener(new AdListener() {
             @Override
-            public void onAdLoaded(AdResponse response) {
+            public void onAdLoaded() {
                 if (listener != null) {
-                    listener.onAdLoaded(response);
+                    listener.onAdLoaded();
                 }
             }
             
             @Override
-            public void onAdFailedToLoad(String error) {
+            public void onAdLoadFailed(String error) {
                 if (listener != null) {
-                    listener.onAdFailedToLoad(error);
+                    listener.onAdLoadFailed(error);
                 }
             }
             
             @Override
             public void onAdShown() {
-                impressionTimestamps.put(adUnitId, System.currentTimeMillis());
-                impressionCounts.put(adUnitId, impressionCounts.getOrDefault(adUnitId, 0) + 1);
+                impressionTimestamps.put(adView.getAdUnitId(), System.currentTimeMillis());
+                impressionCounts.put(adView.getAdUnitId(), impressionCounts.getOrDefault(adView.getAdUnitId(), 0) + 1);
                 if (listener != null) {
                     listener.onAdShown();
                 }
@@ -89,7 +101,7 @@ public class AdLifecycleMonitor {
             
             @Override
             public void onAdClicked() {
-                clickCounts.put(adUnitId, clickCounts.getOrDefault(adUnitId, 0) + 1);
+                clickCounts.put(adView.getAdUnitId(), clickCounts.getOrDefault(adView.getAdUnitId(), 0) + 1);
                 if (listener != null) {
                     listener.onAdClicked();
                 }
@@ -103,9 +115,9 @@ public class AdLifecycleMonitor {
             }
             
             @Override
-            public void onAdRewarded() {
+            public void onRewarded(String type, int amount) {
                 if (listener != null) {
-                    listener.onAdRewarded();
+                    listener.onRewarded(type, amount);
                 }
             }
         });
@@ -113,14 +125,31 @@ public class AdLifecycleMonitor {
     
     /**
      * 注销广告视图
-     * @param adUnitId 广告单元ID
      */
-    public void unregisterAdView(String adUnitId) {
-        activeAds.remove(adUnitId);
-        impressionTimestamps.remove(adUnitId);
-        impressionCounts.remove(adUnitId);
-        clickCounts.remove(adUnitId);
-        adListeners.remove(adUnitId);
+    public void unregisterAdView(AdView adView) {
+        if (adView == null) {
+            Log.e(TAG, "Cannot unregister null AdView");
+            return;
+        }
+        
+        if (registeredAdViews.containsKey(adView)) {
+            registeredAdViews.remove(adView);
+            Log.d(TAG, "Unregistered AdView: " + adView);
+        }
+    }
+    
+    /**
+     * 检查视图是否已注册
+     */
+    public boolean isRegistered(AdView adView) {
+        return registeredAdViews.containsKey(adView);
+    }
+    
+    /**
+     * 获取广告视图对应的监听器
+     */
+    public AdListener getListenerForAdView(AdView adView) {
+        return registeredAdViews.get(adView);
     }
     
     /**
@@ -148,8 +177,10 @@ public class AdLifecycleMonitor {
      */
     public float getClickThroughRate(String adUnitId) {
         int impressions = getImpressionCount(adUnitId);
-        int clicks = getClickCount(adUnitId);
-        return impressions > 0 ? (float) clicks / impressions * 100 : 0;
+        if (impressions == 0) {
+            return 0;
+        }
+        return (float) getClickCount(adUnitId) / impressions;
     }
     
     /**
@@ -189,21 +220,88 @@ public class AdLifecycleMonitor {
             
             if (currentTime - timestamp > AD_EXPIRY_TIME) {
                 Logger.d(TAG, "Ad expired: " + adUnitId);
-                unregisterAdView(adUnitId);
+                unregisterAdView(null);
             }
         }
     }
     
     /**
-     * 销毁监控器
+     * 恢复所有广告
      */
-    public void destroy() {
-        monitorHandler.removeCallbacksAndMessages(null);
-        activeAds.clear();
-        impressionTimestamps.clear();
-        impressionCounts.clear();
-        clickCounts.clear();
-        adListeners.clear();
-        instance = null;
+    public void resumeAll() {
+        for (Map.Entry<AdView, AdListener> entry : registeredAdViews.entrySet()) {
+            AdView adView = entry.getKey();
+            // 根据需要执行恢复操作
+            Log.d(TAG, "Resuming AdView: " + adView);
+        }
+    }
+    
+    /**
+     * 暂停所有广告
+     */
+    public void pauseAll() {
+        for (Map.Entry<AdView, AdListener> entry : registeredAdViews.entrySet()) {
+            AdView adView = entry.getKey();
+            // 根据需要执行暂停操作
+            Log.d(TAG, "Pausing AdView: " + adView);
+        }
+    }
+    
+    /**
+     * 销毁所有广告
+     */
+    public void destroyAll() {
+        for (Map.Entry<AdView, AdListener> entry : registeredAdViews.entrySet()) {
+            AdView adView = entry.getKey();
+            // 根据需要执行销毁操作
+            adView.destroy();
+            Log.d(TAG, "Destroying AdView: " + adView);
+        }
+        registeredAdViews.clear();
+    }
+
+    /**
+     * 通知广告状态改变
+     */
+    public void notifyOnAdStateChanged(AdView adView, String event) {
+        AdListener adListener = getListenerForAdView(adView);
+        if (adListener != null) {
+            adView.setAdListener(new AdListener() {
+                @Override
+                public void onAdLoaded() {
+                    adListener.onAdLoaded();
+                }
+                
+                @Override
+                public void onAdLoaded(AdResponse response) {
+                    adListener.onAdLoaded(response);
+                }
+                
+                @Override
+                public void onAdLoadFailed(String error) {
+                    adListener.onAdLoadFailed(error);
+                }
+                
+                @Override
+                public void onAdShown() {
+                    adListener.onAdShown();
+                }
+                
+                @Override
+                public void onAdClicked() {
+                    adListener.onAdClicked();
+                }
+                
+                @Override
+                public void onAdClosed() {
+                    adListener.onAdClosed();
+                }
+                
+                @Override
+                public void onRewarded(String type, int amount) {
+                    adListener.onRewarded(type, amount);
+                }
+            });
+        }
     }
 } 

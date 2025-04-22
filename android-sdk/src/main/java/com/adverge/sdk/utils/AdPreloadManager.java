@@ -3,15 +3,16 @@ package com.adverge.sdk.utils;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 
-import com.adverge.sdk.AdSDK;
-import com.adverge.sdk.ad.AdRequest;
-import com.adverge.sdk.ad.AdResponse;
-import com.adverge.sdk.ad.AdView;
 import com.adverge.sdk.listener.AdListener;
+import com.adverge.sdk.model.AdRequest;
+import com.adverge.sdk.model.AdResponse;
+import com.adverge.sdk.network.AdServerClient;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -20,142 +21,146 @@ import java.util.concurrent.Executors;
  */
 public class AdPreloadManager {
     private static final String TAG = "AdPreloadManager";
-    private static final int MAX_PRELOAD_COUNT = 3;
-    private static final long PRELOAD_INTERVAL = 30 * 1000; // 30秒
-    
     private static AdPreloadManager instance;
+    
     private final Context context;
+    private final AdServerClient adServerClient;
+    private final Map<String, AdResponse> cachedAds;
     private final ExecutorService executorService;
     private final Handler mainHandler;
-    private final Map<String, AdResponse> preloadedAds;
-    private final Map<String, Long> preloadTimestamps;
-    private final Map<String, AdListener> adListeners;
     
     private AdPreloadManager(Context context) {
         this.context = context.getApplicationContext();
-        this.executorService = Executors.newFixedThreadPool(MAX_PRELOAD_COUNT);
+        this.adServerClient = AdServerClient.getInstance(context);
+        this.cachedAds = new ConcurrentHashMap<>();
+        this.executorService = Executors.newCachedThreadPool();
         this.mainHandler = new Handler(Looper.getMainLooper());
-        this.preloadedAds = new HashMap<>();
-        this.preloadTimestamps = new HashMap<>();
-        this.adListeners = new HashMap<>();
     }
     
-    public static synchronized AdPreloadManager getInstance() {
+    public static synchronized AdPreloadManager getInstance(Context context) {
         if (instance == null) {
-            throw new IllegalStateException("AdPreloadManager must be initialized first");
+            instance = new AdPreloadManager(context);
         }
         return instance;
     }
     
-    public static synchronized void initialize(Context context) {
-        if (instance == null) {
-            instance = new AdPreloadManager(context);
-        }
-    }
-    
     /**
      * 预加载广告
-     * @param adUnitId 广告单元ID
+     * @param adUnitId 广告位ID
      * @param adType 广告类型
-     * @param listener 广告监听器
+     * @param adListener 回调
      */
-    public void preloadAd(String adUnitId, String adType, AdListener listener) {
+    public void preloadAd(String adUnitId, String adType, AdListener adListener) {
         if (adUnitId == null || adUnitId.isEmpty()) {
-            Logger.e(TAG, "Invalid ad unit ID");
-            return;
-        }
-        
-        // 如果已经预加载，直接返回
-        if (preloadedAds.containsKey(adUnitId)) {
-            Logger.d(TAG, "Ad already preloaded: " + adUnitId);
-            if (listener != null) {
-                listener.onAdLoaded(preloadedAds.get(adUnitId));
+            if (adListener != null) {
+                adListener.onAdLoadFailed("Ad unit ID is empty");
             }
             return;
         }
         
-        // 保存监听器
-        adListeners.put(adUnitId, listener);
+        // 检查缓存中是否已有该广告
+        if (cachedAds.containsKey(adUnitId)) {
+            if (adListener != null) {
+                adListener.onAdLoaded(cachedAds.get(adUnitId));
+            }
+            return;
+        }
         
-        // 异步预加载广告
+        // 创建请求参数
+        AdRequest request = new AdRequest();
+        request.setAdUnitId(adUnitId);
+        Map<String, String> extras = new HashMap<>();
+        extras.put("ad_type", adType);
+        request.setExtras(extras);
+        
+        // 请求广告
         executorService.execute(() -> {
             try {
-                AdRequest request = new AdRequest.Builder()
-                        .setAdUnitId(adUnitId)
-                        .setAdType(adType)
-                        .build();
-                
-                // 模拟广告请求
-                AdResponse response = simulateAdRequest(request);
-                
-                // 缓存广告响应
-                preloadedAds.put(adUnitId, response);
-                
-                // 通知监听器
-                mainHandler.post(() -> {
-                    AdListener adListener = adListeners.get(adUnitId);
-                    if (adListener != null) {
-                        adListener.onAdLoaded(response);
+                adServerClient.requestAd(request, new AdServerClient.AdCallback() {
+                    @Override
+                    public void onSuccess(AdResponse response) {
+                        // 缓存广告
+                        cachedAds.put(adUnitId, response);
+                        
+                        // 回调通知
+                        if (adListener != null) {
+                            mainHandler.post(() -> adListener.onAdLoaded(response));
+                        }
+                    }
+                    
+                    @Override
+                    public void onError(String error) {
+                        // 模拟广告响应
+                        if (shouldMockResponse()) {
+                            AdResponse mockResponse = createMockAdResponse(adUnitId, adType);
+                            cachedAds.put(adUnitId, mockResponse);
+                            
+                            if (adListener != null) {
+                                mainHandler.post(() -> adListener.onAdLoaded(mockResponse));
+                            }
+                            return;
+                        }
+                        
+                        // 回调通知
+                        if (adListener != null) {
+                            mainHandler.post(() -> adListener.onAdLoadFailed(error));
+                        }
                     }
                 });
-                
             } catch (Exception e) {
-                Logger.e(TAG, "Failed to preload ad: " + adUnitId, e);
-                mainHandler.post(() -> {
-                    AdListener adListener = adListeners.get(adUnitId);
-                    if (adListener != null) {
-                        adListener.onAdFailedToLoad(e.getMessage());
-                    }
-                });
+                Log.e(TAG, "Error while preloading ad", e);
+                if (adListener != null) {
+                    mainHandler.post(() -> adListener.onAdLoadFailed(e.getMessage()));
+                }
             }
         });
     }
     
     /**
      * 获取预加载的广告
-     * @param adUnitId 广告单元ID
-     * @return 广告响应，如果没有预加载则返回null
+     * @param adUnitId 广告位ID
+     * @return 广告响应，如果没有则返回null
      */
     public AdResponse getPreloadedAd(String adUnitId) {
-        return preloadedAds.get(adUnitId);
+        AdResponse response = cachedAds.get(adUnitId);
+        if (response != null) {
+            // 移除缓存，避免重用
+            cachedAds.remove(adUnitId);
+        }
+        return response;
     }
     
     /**
-     * 移除预加载的广告
-     * @param adUnitId 广告单元ID
+     * 清除所有预加载的广告
      */
-    public void removePreloadedAd(String adUnitId) {
-        preloadedAds.remove(adUnitId);
-        adListeners.remove(adUnitId);
+    public void clearAll() {
+        cachedAds.clear();
     }
     
     /**
-     * 清理所有预加载的广告
+     * 是否应该模拟响应
      */
-    public void clearPreloadedAds() {
-        preloadedAds.clear();
-        adListeners.clear();
+    private boolean shouldMockResponse() {
+        // 判断是否在开发环境
+        return BuildConfig.DEBUG;
     }
     
     /**
-     * 模拟广告请求
+     * 创建模拟广告响应
      */
-    private AdResponse simulateAdRequest(AdRequest request) {
-        // TODO: 实现实际的广告请求逻辑
-        // 这里使用模拟数据
-        return new AdResponse.Builder()
-                .setAdUnitId(request.getAdUnitId())
-                .setAdType(request.getAdType())
-                .setAdContent("Mock ad content")
-                .build();
+    private AdResponse createMockAdResponse(String adUnitId, String adType) {
+        AdResponse.Builder builder = new AdResponse.Builder()
+                .setAdUnitId(adUnitId)
+                .setPlatform("mock")
+                .setEcpm(0.1)
+                .setExtra("ad_type", adType);
+        
+        return builder.build();
     }
     
-    /**
-     * 销毁资源
-     */
     public void destroy() {
         executorService.shutdown();
-        clearPreloadedAds();
+        cachedAds.clear();
         instance = null;
     }
 } 

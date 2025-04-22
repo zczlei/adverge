@@ -5,20 +5,17 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
-import com.adverge.sdk.AdSDK;
-import com.adverge.sdk.config.Config;
 import com.adverge.sdk.model.AdRequest;
 import com.adverge.sdk.model.AdResponse;
 import com.adverge.sdk.model.Platform;
 import com.adverge.sdk.utils.JsonUtils;
-import com.adverge.sdk.utils.Logger;
-
-import org.json.JSONException;
-import org.json.JSONObject;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
@@ -33,28 +30,21 @@ import okhttp3.Response;
  * 广告服务器客户端实现类
  */
 public class AdServerClientImpl implements AdServerClient {
-    private static final String TAG = "AdServerClient";
+    private static final String TAG = "AdServerClientImpl";
     private static final MediaType JSON = MediaType.parse("application/json; charset=utf-8");
     
     private static AdServerClientImpl instance;
     private final Context context;
-    private final OkHttpClient client;
-    private final String baseUrl;
-    private final Config config;
+    private OkHttpClient client;
+    private String baseUrl;
     private final Handler mainHandler;
+    private final Gson gson;
+    private boolean isInitialized = false;
     
     private AdServerClientImpl(Context context) {
         this.context = context.getApplicationContext();
-        this.config = AdSDK.getInstance().getConfig();
-        this.baseUrl = config.getServerUrl();
         this.mainHandler = new Handler(Looper.getMainLooper());
-        
-        // 创建OkHttpClient
-        this.client = new OkHttpClient.Builder()
-                .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .build();
+        this.gson = new Gson();
     }
     
     public static synchronized AdServerClientImpl getInstance(Context context) {
@@ -65,226 +55,389 @@ public class AdServerClientImpl implements AdServerClient {
     }
     
     @Override
-    public void requestAd(AdRequest request, final AdServerCallback callback) {
-        try {
-            // 构建请求URL
-            String url = baseUrl + "/v1/ad";
-            
-            // 构建请求体
-            JSONObject jsonBody = new JSONObject();
-            jsonBody.put("adUnitId", request.getAdUnitId());
-            jsonBody.put("appId", config.getAppId());
-            
-            // 添加设备信息
-            if (request.getDeviceInfo() != null) {
-                JSONObject deviceInfo = new JSONObject();
-                deviceInfo.put("type", request.getDeviceInfo().getType());
-                deviceInfo.put("os", request.getDeviceInfo().getOs());
-                deviceInfo.put("model", request.getDeviceInfo().getModel());
-                deviceInfo.put("osVersion", request.getDeviceInfo().getOsVersion());
-                jsonBody.put("deviceInfo", deviceInfo);
+    public void init(Map<String, Object> configs) {
+        if (isInitialized) {
+            Log.w(TAG, "AdServerClient already initialized");
+            return;
+        }
+        
+        // 从配置中获取基础URL
+        if (configs.containsKey("baseUrl")) {
+            this.baseUrl = (String) configs.get("baseUrl");
+        } else {
+            this.baseUrl = "https://api.adverge.com"; // 默认服务器地址
+        }
+        
+        // 获取超时设置
+        int connectTimeout = 10;
+        int readTimeout = 10;
+        int writeTimeout = 10;
+        
+        if (configs.containsKey("connectTimeout")) {
+            connectTimeout = ((Number) configs.get("connectTimeout")).intValue();
+        }
+        if (configs.containsKey("readTimeout")) {
+            readTimeout = ((Number) configs.get("readTimeout")).intValue();
+        }
+        if (configs.containsKey("writeTimeout")) {
+            writeTimeout = ((Number) configs.get("writeTimeout")).intValue();
+        }
+        
+        // 创建OkHttpClient
+        this.client = new OkHttpClient.Builder()
+                .connectTimeout(connectTimeout, TimeUnit.SECONDS)
+                .readTimeout(readTimeout, TimeUnit.SECONDS)
+                .writeTimeout(writeTimeout, TimeUnit.SECONDS)
+                .build();
+        
+        isInitialized = true;
+        Log.i(TAG, "AdServerClient initialized with baseUrl: " + baseUrl);
+    }
+    
+    @Override
+    public void requestAd(AdRequest request, final AdCallback callback) {
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/ads/request";
+        String json = gson.toJson(request);
+        RequestBody body = RequestBody.create(JSON, json);
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Request ad failed", e);
+                notifyError(callback, e.getMessage());
             }
             
-            // 添加用户信息
-            if (request.getUserInfo() != null) {
-                JSONObject userInfo = new JSONObject();
-                userInfo.put("id", request.getUserInfo().getId());
-                userInfo.put("age", request.getUserInfo().getAge());
-                userInfo.put("gender", request.getUserInfo().getGender());
-                jsonBody.put("userInfo", userInfo);
-            }
-            
-            // 构建请求
-            RequestBody body = RequestBody.create(jsonBody.toString(), JSON);
-            Request httpRequest = new Request.Builder()
-                    .url(url)
-                    .addHeader("Content-Type", "application/json")
-                    .addHeader("X-API-Key", config.getApiKey())
-                    .post(body)
-                    .build();
-            
-            // 发送请求
-            client.newCall(httpRequest).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    notifyError(callback, "网络请求失败: " + e.getMessage());
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String error = "Request ad failed with code: " + response.code();
+                    Log.e(TAG, error);
+                    notifyError(callback, error);
+                    return;
                 }
                 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    try {
-                        if (!response.isSuccessful()) {
-                            notifyError(callback, "服务器响应错误: " + response.code());
-                            return;
-                        }
-                        
-                        String responseBody = response.body().string();
-                        JSONObject jsonResponse = new JSONObject(responseBody);
-                        
-                        // 解析广告响应
-                        AdResponse adResponse = new AdResponse();
-                        adResponse.setAdUnitId(jsonResponse.optString("adUnitId"));
-                        adResponse.setPlatform(jsonResponse.optString("platform"));
-                        adResponse.setAdId(jsonResponse.optString("adId"));
-                        adResponse.setAdContent(jsonResponse.optString("adContent"));
-                        adResponse.setPrice(jsonResponse.optDouble("price"));
-                        adResponse.setCurrency(jsonResponse.optString("currency", "USD"));
-                        adResponse.setExpiry(jsonResponse.optLong("expiry"));
-                        adResponse.setBidToken(jsonResponse.optString("bidToken"));
-                        adResponse.setPlatformParams(jsonResponse.optString("platformParams"));
-                        
-                        // 通知回调
-                        notifySuccess(callback, adResponse);
-                    } catch (Exception e) {
-                        notifyError(callback, "解析响应失败: " + e.getMessage());
-                    }
+                String responseBody = response.body().string();
+                try {
+                    AdResponse adResponse = gson.fromJson(responseBody, AdResponse.class);
+                    notifySuccess(callback, adResponse);
+                } catch (Exception e) {
+                    Log.e(TAG, "Parse response failed", e);
+                    notifyError(callback, e.getMessage());
                 }
-            });
-        } catch (Exception e) {
-            notifyError(callback, "构建请求失败: " + e.getMessage());
-        }
+            }
+        });
     }
     
     @Override
     public void trackImpression(String adUnitId, String platform) {
-        try {
-            // 构建请求URL
-            String url = baseUrl + "/v1/track/impression?adUnitId=" + adUnitId + "&platform=" + platform;
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/ads/impression";
+        String json = gson.toJson(new ImpressionRequest(adUnitId, platform));
+        RequestBody body = RequestBody.create(JSON, json);
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Track impression failed", e);
+            }
             
-            // 构建请求
-            Request request = new Request.Builder()
-                    .url(url)
-                    .addHeader("X-API-Key", config.getApiKey())
-                    .post(RequestBody.create("", null))
-                    .build();
-            
-            // 发送请求
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Logger.e(TAG, "记录展示失败: " + e.getMessage());
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Track impression failed with code: " + response.code());
                 }
-                
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (!response.isSuccessful()) {
-                        Logger.e(TAG, "记录展示服务器响应错误: " + response.code());
-                    }
-                }
-            });
-        } catch (Exception e) {
-            Logger.e(TAG, "记录展示异常: " + e.getMessage());
-        }
+            }
+        });
     }
     
     @Override
     public void trackClick(String adUnitId, String platform) {
-        try {
-            // 构建请求URL
-            String url = baseUrl + "/v1/track/click?adUnitId=" + adUnitId + "&platform=" + platform;
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/ads/click";
+        String json = gson.toJson(new ClickRequest(adUnitId, platform));
+        RequestBody body = RequestBody.create(JSON, json);
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Track click failed", e);
+            }
             
-            // 构建请求
-            Request request = new Request.Builder()
-                    .url(url)
-                    .addHeader("X-API-Key", config.getApiKey())
-                    .post(RequestBody.create("", null))
-                    .build();
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Track click failed with code: " + response.code());
+                }
+            }
+        });
+    }
+    
+    @Override
+    public void trackPerformance(String adId, String event, Map<String, Object> params) {
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/ads/performance";
+        String json = gson.toJson(new PerformanceRequest(adId, event, params));
+        RequestBody body = RequestBody.create(JSON, json);
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Track performance failed", e);
+            }
             
-            // 发送请求
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    Logger.e(TAG, "记录点击失败: " + e.getMessage());
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    Log.e(TAG, "Track performance failed with code: " + response.code());
                 }
-                
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    if (!response.isSuccessful()) {
-                        Logger.e(TAG, "记录点击服务器响应错误: " + response.code());
-                    }
-                }
-            });
-        } catch (Exception e) {
-            Logger.e(TAG, "记录点击异常: " + e.getMessage());
-        }
+            }
+        });
     }
     
     @Override
     public void getPlatforms(final PlatformCallback callback) {
-        try {
-            // 构建请求URL
-            String url = baseUrl + "/v1/platforms";
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/platforms";
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .get()
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Get platforms failed", e);
+                notifyPlatformError(callback, e.getMessage());
+            }
             
-            // 构建请求
-            Request request = new Request.Builder()
-                    .url(url)
-                    .addHeader("X-API-Key", config.getApiKey())
-                    .get()
-                    .build();
-            
-            // 发送请求
-            client.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(Call call, IOException e) {
-                    notifyPlatformError(callback, "获取平台列表失败: " + e.getMessage());
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String error = "Get platforms failed with code: " + response.code();
+                    Log.e(TAG, error);
+                    notifyPlatformError(callback, error);
+                    return;
                 }
                 
-                @Override
-                public void onResponse(Call call, Response response) throws IOException {
-                    try {
-                        if (!response.isSuccessful()) {
-                            notifyPlatformError(callback, "服务器响应错误: " + response.code());
-                            return;
-                        }
-                        
-                        String responseBody = response.body().string();
-                        List<Platform> platforms = JsonUtils.fromJsonArray(responseBody, Platform.class);
-                        
-                        // 通知回调
-                        notifyPlatformSuccess(callback, platforms);
-                    } catch (Exception e) {
-                        notifyPlatformError(callback, "解析响应失败: " + e.getMessage());
-                    }
+                String responseBody = response.body().string();
+                try {
+                    List<Platform> platforms = gson.fromJson(responseBody, new TypeToken<List<Platform>>(){}.getType());
+                    notifyPlatformSuccess(callback, platforms);
+                } catch (Exception e) {
+                    Log.e(TAG, "Parse platforms failed", e);
+                    notifyPlatformError(callback, e.getMessage());
                 }
-            });
-        } catch (Exception e) {
-            notifyPlatformError(callback, "构建请求失败: " + e.getMessage());
+            }
+        });
+    }
+
+    @Override
+    public void savePlatform(Platform platform, final PlatformCallback callback) {
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/platforms";
+        String json = gson.toJson(platform);
+        RequestBody body = RequestBody.create(JSON, json);
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .post(body)
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Save platform failed", e);
+                notifyPlatformError(callback, e.getMessage());
+            }
+            
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String error = "Save platform failed with code: " + response.code();
+                    Log.e(TAG, error);
+                    notifyPlatformError(callback, error);
+                    return;
+                }
+                
+                String responseBody = response.body().string();
+                try {
+                    List<Platform> platforms = gson.fromJson(responseBody, new TypeToken<List<Platform>>(){}.getType());
+                    notifyPlatformSuccess(callback, platforms);
+                } catch (Exception e) {
+                    Log.e(TAG, "Parse platforms failed", e);
+                    notifyPlatformError(callback, e.getMessage());
+                }
+            }
+        });
+    }
+
+    @Override
+    public void enablePlatform(String platformName, final PlatformCallback callback) {
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/platforms/" + platformName + "/enable";
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create(null, new byte[0]))
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Enable platform failed", e);
+                notifyPlatformError(callback, e.getMessage());
+            }
+            
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String error = "Enable platform failed with code: " + response.code();
+                    Log.e(TAG, error);
+                    notifyPlatformError(callback, error);
+                    return;
+                }
+                
+                String responseBody = response.body().string();
+                try {
+                    List<Platform> platforms = gson.fromJson(responseBody, new TypeToken<List<Platform>>(){}.getType());
+                    notifyPlatformSuccess(callback, platforms);
+                } catch (Exception e) {
+                    Log.e(TAG, "Parse platforms failed", e);
+                    notifyPlatformError(callback, e.getMessage());
+                }
+            }
+        });
+    }
+
+    @Override
+    public void disablePlatform(String platformName, final PlatformCallback callback) {
+        ensureInitialized();
+        
+        String url = baseUrl + "/api/v1/platforms/" + platformName + "/disable";
+        
+        Request httpRequest = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create(null, new byte[0]))
+                .build();
+        
+        client.newCall(httpRequest).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                Log.e(TAG, "Disable platform failed", e);
+                notifyPlatformError(callback, e.getMessage());
+            }
+            
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                if (!response.isSuccessful()) {
+                    String error = "Disable platform failed with code: " + response.code();
+                    Log.e(TAG, error);
+                    notifyPlatformError(callback, error);
+                    return;
+                }
+                
+                String responseBody = response.body().string();
+                try {
+                    List<Platform> platforms = gson.fromJson(responseBody, new TypeToken<List<Platform>>(){}.getType());
+                    notifyPlatformSuccess(callback, platforms);
+                } catch (Exception e) {
+                    Log.e(TAG, "Parse platforms failed", e);
+                    notifyPlatformError(callback, e.getMessage());
+                }
+            }
+        });
+    }
+    
+    @Override
+    public void destroy() {
+        Log.d(TAG, "Destroying AdServerClient");
+        if (client != null) {
+            client.dispatcher().cancelAll();
+        }
+        isInitialized = false;
+        instance = null;
+    }
+    
+    private void ensureInitialized() {
+        if (!isInitialized) {
+            throw new IllegalStateException("AdServerClient is not initialized. Call init() first.");
         }
     }
     
-    /**
-     * 在主线程上通知成功回调
-     */
-    private void notifySuccess(final AdServerCallback callback, final AdResponse response) {
-        if (callback != null) {
-            mainHandler.post(() -> callback.onSuccess(response));
-        }
+    private void notifySuccess(final AdCallback callback, final AdResponse response) {
+        mainHandler.post(() -> callback.onSuccess(response));
     }
     
-    /**
-     * 在主线程上通知错误回调
-     */
-    private void notifyError(final AdServerCallback callback, final String error) {
-        if (callback != null) {
-            mainHandler.post(() -> callback.onError(error));
-        }
+    private void notifyError(final AdCallback callback, final String error) {
+        mainHandler.post(() -> callback.onError(error));
     }
-    
-    /**
-     * 在主线程上通知平台成功回调
-     */
+
     private void notifyPlatformSuccess(final PlatformCallback callback, final List<Platform> platforms) {
-        if (callback != null) {
-            mainHandler.post(() -> callback.onSuccess(platforms));
+        mainHandler.post(() -> callback.onSuccess(platforms));
+    }
+
+    private void notifyPlatformError(final PlatformCallback callback, final String error) {
+        mainHandler.post(() -> callback.onError(error));
+    }
+
+    private static class ImpressionRequest {
+        private String adUnitId;
+        private String platform;
+
+        public ImpressionRequest(String adUnitId, String platform) {
+            this.adUnitId = adUnitId;
+            this.platform = platform;
+        }
+    }
+
+    private static class ClickRequest {
+        private String adUnitId;
+        private String platform;
+
+        public ClickRequest(String adUnitId, String platform) {
+            this.adUnitId = adUnitId;
+            this.platform = platform;
         }
     }
     
-    /**
-     * 在主线程上通知平台错误回调
-     */
-    private void notifyPlatformError(final PlatformCallback callback, final String error) {
-        if (callback != null) {
-            mainHandler.post(() -> callback.onError(error));
+    private static class PerformanceRequest {
+        private String adId;
+        private String event;
+        private Map<String, Object> params;
+        
+        public PerformanceRequest(String adId, String event, Map<String, Object> params) {
+            this.adId = adId;
+            this.event = event;
+            this.params = params != null ? params : Collections.emptyMap();
         }
     }
 } 

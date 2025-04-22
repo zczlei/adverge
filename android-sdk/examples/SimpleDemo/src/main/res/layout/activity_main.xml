@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textAlignment="center"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 状态显示 -->
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/ready"
+            android:textAlignment="center"
+            android:padding="8dp"
+            android:background="#E0E0E0"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 横幅广告部分 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/banner_ad"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/load_banner_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/load_banner_ad"
+            android:layout_marginBottom="8dp" />
+
+        <FrameLayout
+            android:id="@+id/banner_container"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="#F5F5F5"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 插屏广告部分 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/interstitial_ad"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/load_interstitial_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/load_interstitial_ad"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/show_interstitial_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/show_interstitial_ad"
+            android:layout_marginBottom="16dp" />
+
+        <!-- 激励广告部分 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/rewarded_ad"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/load_rewarded_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/load_rewarded_ad"
+            android:layout_marginBottom="8dp" />
+
+        <Button
+            android:id="@+id/show_rewarded_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/show_rewarded_ad"
+            android:layout_marginBottom="16dp" />
+
+    </LinearLayout>
+</ScrollView> 
