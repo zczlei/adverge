@@ -1,6 +1,8 @@
 package com.adverge.sdk.view;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
 
@@ -56,7 +58,10 @@ public abstract class AdView extends FrameLayout {
 
     public void setAdListener(AdListener listener) {
         this.adListener = listener;
-        AdLifecycleMonitor.getInstance(getContext()).registerAdView(this, listener);
+        // 延迟注册到 AdLifecycleMonitor
+        new Handler(Looper.getMainLooper()).post(() -> {
+            AdLifecycleMonitor.getInstance(getContext()).registerAdView(this, listener);
+        });
     }
 
     public AdListener getAdListener() {
